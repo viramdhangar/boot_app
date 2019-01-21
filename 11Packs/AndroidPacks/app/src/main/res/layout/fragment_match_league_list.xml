@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    >
+    <data>
+        <variable
+            name="matchLeagueListFragment"
+            type="girnarsoft.com.demoapp.fragment.MatchLeagueListFragment"/>
+    </data>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <girnarsoft.com.demoapp.utils.CalligraphyDefaultTabLayout
+            android:id="@+id/tabFilter"
+            style="@style/TabLayoutStyle.Black.Fixed" />
+
+        <android.support.v4.view.ViewPager
+            android:id="@+id/vpFilter"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/tabFilter" />
+    </RelativeLayout>
+
+
+</layout>

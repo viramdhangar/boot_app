@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="girnarsoft.com.demoapp">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <supports-screens
+        android:anyDensity="true"
+        android:compatibleWidthLimitDp="320"
+        android:largeScreens="true"
+        android:normalScreens="true"
+        android:requiresSmallestWidthDp="320"
+        android:resizeable="true"
+        android:smallScreens="true"
+        android:xlargeScreens="true" />
+
+    <application
+        android:name=".application.BaseApplication"
+        android:allowBackup="${allowBackup}"
+        android:fullBackupContent="${allowBackup}"
+        android:hardwareAccelerated="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:launchMode="singleTop"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:screenOrientation="portrait"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        tools:replace="android:allowBackup">
+        <activity android:name=".activity.MatchActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".activity.SplashActivity"></activity>
+        <activity android:name=".activity.MatchLeagueActivity"></activity>
+        <activity android:name=".activity.LeagueJoinActivity"></activity>
+        <activity android:name=".activity.LeaguePayoutActivity"></activity>
+        <meta-data
+            android:name="girnarsoft.com.demoapp.utils.imageloader.ImageGlideModule"
+            android:value="GlideModule" />
+    </application>
+
+</manifest>

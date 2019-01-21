@@ -1,0 +1,34 @@
+ext {
+    configuration = [
+            applicationId: "com.techrock.elevenpacks",
+
+            minifyEnabled    : true,
+            multiDexEnabled  : true,
+            dataBinding      : true,
+            shrinkResources  : true,
+
+            quiet            : true,
+            abortOnError     : true,
+            ignoreWarnings   : true,
+            disable          : 'MissingTranslation',
+            xmlReport        : false,
+            htmlReport       : true,
+
+            preDexLibraries  : false,
+            maxProcessCount  : 8,
+            javaMaxHeapSize  : "8192M",
+
+            versionMajor     : 1,
+            versionMinor     : 0,
+            versionPatch     : 0,
+            versionClassifier: ".r",
+
+
+    ]
+
+
+}
+
+
+
+

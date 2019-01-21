@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    >
+    <data>
+        <variable
+            name="myTeamFragment"
+            type="girnarsoft.com.demoapp.fragment.MyTeamsFragment"/>
+    </data>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        >
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/colorAccent"
+            android:text="CREATE TEAM"
+            android:textColor="@color/colorWhite"
+            android:layout_margin="@dimen/dimen_ten"
+            />
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recycler_view_match_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+    </LinearLayout>
+
+
+</layout>

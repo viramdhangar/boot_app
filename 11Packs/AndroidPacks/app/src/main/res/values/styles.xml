@@ -1,0 +1,88 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="BB_BottomBarItem">
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:layout_width">wrap_content</item>
+        <!-- layout_height is ignored since the height is set programmatically in BottomBar
+        .updateItems() -->
+        <item name="android:layout_height">@dimen/bb_height</item>
+    </style>
+
+    <style name="BB_BottomBarItem_TitleStyle">
+        <!-- Material spec: "Avoid long text labels as these labels do not truncate or wrap." -->
+        <item name="android:singleLine">true</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:gravity">center_horizontal</item>
+    </style>
+
+    <style name="BB_BottomBarItem_Fixed.TitleAppearance" parent="TextAppearance.AppCompat.Body1">
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="BB_BottomBarItem_Shifting.TitleAppearance" parent="BB_BottomBarItem_Fixed.TitleAppearance">
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+
+    <style name="BB_BottomBarItem_Tablet">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="BB_BottomBarBadge_Text" parent="TextAppearance.AppCompat.Body2">
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+
+
+    <!--8.Tab Layout Activity Theme -->
+    <style name="TabLayoutDeactiveStyle">
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="TabLayoutDeactiveStyle.Black" parent="TabLayoutDeactiveStyle">
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textSize">@dimen/small_text</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
+    <style name="TabLayoutStyle" parent="Widget.Design.TabLayout">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/dimen_forty</item>
+        <item name="tabIndicatorColor">@color/colorTabIndicator</item>
+        <item name="tabIndicatorHeight">4dp</item>
+    </style>
+
+    <style name="TabLayoutStyle.Black" parent="TabLayoutStyle">
+        <item name="android:background">@color/colorWhite</item>
+        <item name="tabSelectedTextColor">@color/colorAccent</item>
+        <item name="tabTextAppearance">@style/TabLayoutDeactiveStyle.Black</item>
+    </style>
+
+    <style name="TabLayoutStyle.Black.Fixed" parent="TabLayoutStyle.Black">
+        <item name="tabMode">fixed</item>
+    </style>
+
+    <style name="DialogTheme">
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowSoftInputMode">stateUnspecified|adjustPan</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowTitleStyle">@null</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+        <item name="android:backgroundDimEnabled">true</item>
+
+    </style>
+
+</resources>

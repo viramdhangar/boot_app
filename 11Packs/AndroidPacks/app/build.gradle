@@ -1,0 +1,222 @@
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
+apply plugin: 'com.android.application'
+apply from: file(CONFIG_FILE)
+apply from: file(LIBRARY_FILE)
+def versionPropsFile = file(VERSION_FILE)
+
+android {
+
+    signingConfigs {
+        releaseProdConfig {
+//            storeFile file(KEYSTORE_PROD_FILE)
+//            storePassword KEYSTORE_PROD_PASSWORD
+//            keyAlias KEYSTORE_PROD_ALIAS
+//            keyPassword KEYSTORE_PROD_PASSWORD
+        }
+
+        releaseUATConfig {
+//            storeFile file(KEYSTORE_UAT_FILE)
+//            storePassword KEYSTORE_UAT_PASSWORD
+//            keyAlias KEYSTORE_UAT_ALIAS
+//            keyPassword KEYSTORE_UAT_PASSWORD
+        }
+    }
+
+    /******** 2.versionCode Updation in Version File *********/
+    def versionCodeFile = 1   //Temp Version Build For Real -> Visit:VERSION_FILE
+    def versionNameFile = "1.0.0"
+    if (versionPropsFile.canRead()) {
+        Properties versionProps = new Properties()
+        versionProps.load(new FileInputStream(versionPropsFile))
+        versionNameFile = versionProps['VERSION_NAME']
+        versionCodeFile = versionProps['VERSION_CODE'].toInteger()
+
+    } else {
+        throw new GradleException("Could not read version.properties!")
+    }
+
+    ext.autoIncrementProdBuildNumber = {
+        if (versionPropsFile.canRead()) {
+            Properties versionProps = new Properties()
+            versionProps.load(new FileInputStream(versionPropsFile))
+            versionCodeFile = versionProps['VERSION_CODE'].toInteger() + 1
+            //Incrementing Version Code
+            versionProps['VERSION_CODE'] = versionCodeFile.toString()
+            versionProps.store(versionPropsFile.newWriter(), null)
+            println "autoIncrementProdBuildNumber"
+        } else {
+            throw new GradleException("Could not read version.properties!")
+        }
+    }
+
+    tasks.whenTaskAdded { task ->
+        if (task.name == 'assembleProdRelease') {
+            task.finalizedBy autoIncrementProdBuildNumber
+        }
+    }
+
+    /******** 3.Basic Setup Configuration *********/
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion "${buildToolsVersion}"
+    defaultConfig {
+        applicationId configuration.applicationId
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode versionCodeFile
+        versionName "${versionNameFile}"
+        multiDexEnabled configuration.multiDexEnabled
+        vectorDrawables.useSupportLibrary = true
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    aaptOptions {
+        cruncherEnabled = false
+    }
+
+    dataBinding {
+        enabled = configuration.dataBinding
+    }
+
+    compileOptions {
+        sourceCompatibility rootProject.ext.javaVersion
+        targetCompatibility rootProject.ext.javaVersion
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled configuration.minifyEnabled
+            useProguard true    // obfuscate
+            debuggable false
+            shrinkResources configuration.shrinkResources
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            manifestPlaceholders = [allowBackup: "false"]
+            buildConfigField "boolean", "LOG", "false"
+
+        }
+
+        debug {
+            debuggable true
+            useProguard false   // don't obfuscate
+            minifyEnabled false  // shrink
+            jniDebuggable true
+            renderscriptDebuggable true
+            buildConfigField "boolean", "LOG", "true"
+            manifestPlaceholders = [allowBackup: "true"]
+
+        }
+        android.applicationVariants.all { variant ->
+            variant.outputs.all {
+                def formattedDate = new Date().format('yyyy-MM-dd')
+                def fullName = outputFileName
+                def projectName = fullName.substring(0, fullName.indexOf('-'))
+                outputFileName = "${variant.name}-${variant.versionName}-${formattedDate}.apk"
+            }
+        }
+    }
+    flavorDimensions "androidpacks"
+    productFlavors {
+        setProperty()
+        uat {
+            dimension "androidpacks"
+            signingConfig signingConfigs.releaseUATConfig
+        }
+
+        prod {
+            dimension "androidpacks"
+            signingConfig signingConfigs.releaseProdConfig
+        }
+    }
+    configurations {
+        all {
+            exclude group: 'xpp3', module: 'xpp3'
+        }
+    }
+
+    lintOptions {
+        quiet configuration.quiet
+        // if true, stop the gradle build if errors are found
+        abortOnError configuration.abortOnError
+        // if true, only report errors
+        ignoreWarnings configuration.ignoreWarnings
+        disable configuration.disable
+        checkReleaseBuilds false
+    }
+    packagingOptions {
+        exclude 'LICENSE.txt'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/rxjava.properties'
+    }
+}
+
+def setProperty() {
+    def flavor = getCurrentFlavor()
+    if (flavor.equalsIgnoreCase("uat")) {
+        apply from: file(UAT_RESOURCE_FILE)
+
+    } else if (flavor.equalsIgnoreCase("prod")) {
+        apply from: file(PROD_RESOURCE_FILE)
+    }
+
+}
+
+def getCurrentFlavor() {
+    String taskRequestName = getGradle().getStartParameter().getTaskRequests().toString()
+
+    Pattern pattern
+
+    if (taskRequestName.contains("assemble"))
+        pattern = Pattern.compile("assemble(\\w+)(Release|Debug)")
+    else
+        pattern = Pattern.compile("generate(\\w+)(Release|Debug)")
+
+    Matcher matcher = pattern.matcher(taskRequestName)
+
+    if (matcher.find()) {
+        return matcher.group(1).toLowerCase()
+    } else {
+        return ""
+    }
+}
+
+dependencies {
+    api fileTree(include: ['*.jar'], dir: 'libs')
+    api "${library.support_constraint}"
+    // For RXJava
+    api "${library.rxandroid}"
+    api "${library.rxjava}"
+    api "${library.eventbus}"
+    //For Parallex HeaderView
+    api "${library.scrollable}"
+
+    api "${library.app_compat}"
+    api "${library.design_compat}"
+    api "${library.cardview}"
+    api "${library.google_service_analytics}"
+    api "${library.glide}"
+    api("${library.retrofit2}") {
+        exclude group: "${exclude.okhttp_group}", module: "${exclude.okhttp}"
+    }
+    api "${library.retrofit2_conversion}"
+    api "${library.recycler}"
+    api "${library.cupborad}"
+    api "${library.okhttp3}"
+    api "${library.palette}"
+    api "${library.multidex}"
+
+    api 'com.jakewharton.retrofit:retrofit2-rxjava2-adapter:1.0.0'
+    api 'com.scottyab:secure-preferences-lib:0.1.4'
+    api 'com.ethanhua:skeleton:1.0.0'
+    api 'org.parceler:parceler-api:1.1.9'
+    api 'commons-codec:commons-codec:1.8'
+
+    implementation 'com.android.support:support-v4:27.1.1'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.8.0'
+    annotationProcessor 'org.parceler:parceler:1.1.9'
+    api 'uk.co.chrisjenx:calligraphy:2.3.0'
+}
+//apply plugin: 'com.google.gms.google-services'
+

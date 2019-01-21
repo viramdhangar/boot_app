@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+    <data>
+        <variable
+            name="matchModel"
+            type="girnarsoft.com.demoapp.fragment.model.MatchModel"/>
+    </data>
+    <android.support.v7.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        card_view:cardCornerRadius="6dp"
+        card_view:cardElevation="3dp"
+        card_view:cardUseCompatPadding="true">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:orientation="vertical"
+            android:padding="5dp">
+
+            <ImageView
+                android:layout_centerVertical="true"
+                android:id="@+id/ivTeamOne"
+                android:layout_alignParentStart="true"
+                android:layout_width="@dimen/dimen_eighty"
+                android:layout_height="@dimen/dimen_eighty"
+                android:contentDescription="@null"
+                app:imageUrl="@{matchModel.teamOneUrl}"
+                app:placeholder="@{@drawable/defaultimage}"
+                tools:src="@drawable/defaultimage"
+                android:src="@drawable/defaultimage"/>
+            <LinearLayout
+                android:layout_toLeftOf="@+id/ivTeamTwo"
+                android:layout_margin="@dimen/dimen_five"
+                android:layout_toRightOf="@+id/ivTeamOne"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                >
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="CAP vs STR"
+                    android:text="@{matchModel.shortName}"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"
+                    android:textSize="@dimen/sp_size_sixteen"
+                    />
+                <TextView
+                    android:layout_marginTop="@dimen/dimen_five"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@{matchModel.teamOne}"
+                    tools:text="South Africa T20 Carnival"
+                    android:textStyle="bold"
+                    android:textSize="@dimen/sp_size_fourteen"
+                    />
+                <TextView
+                    android:layout_marginTop="@dimen/dimen_five"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@{matchModel.shortType}"
+                    tools:text="Twenty20"
+                    android:textStyle="bold"
+                    android:textSize="@dimen/sp_size_fourteen"
+                    />
+                <TextView
+                    android:layout_marginTop="@dimen/dimen_five"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="Time"
+                    android:text="@{matchModel.time}"
+                    android:textStyle="bold"
+                    android:textSize="@dimen/sp_size_fourteen"
+                    />
+            </LinearLayout>
+            <ImageView
+                android:id="@+id/ivTeamTwo"
+                android:layout_centerVertical="true"
+                android:layout_alignParentEnd="true"
+                android:layout_width="@dimen/dimen_eighty"
+                android:layout_height="@dimen/dimen_eighty"
+                android:contentDescription="@null"
+                app:imageUrl="@{matchModel.teamTwoUrl}"
+                app:placeholder="@{@drawable/defaultimage}"
+                tools:src="@drawable/defaultimage"
+                android:src="@drawable/defaultimage"/>
+
+        </RelativeLayout>
+
+    </android.support.v7.widget.CardView>
+</layout>

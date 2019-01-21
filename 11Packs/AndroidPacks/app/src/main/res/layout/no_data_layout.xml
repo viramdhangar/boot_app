@@ -1,0 +1,33 @@
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    >
+
+    <RelativeLayout
+        android:id="@+id/rlyNoData"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        >
+        <TextView
+            android:layout_centerInParent="true"
+            android:id="@+id/lblNodata"
+            android:layout_width="match_parent"
+            android:gravity="center_horizontal"
+            android:text="No data found"
+            android:textSize="@dimen/sp_size_fourteen"
+            android:textColor="@color/colorAccent"
+            android:layout_height="wrap_content" />
+         <TextView
+             android:id="@+id/lblReload"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:background="@color/colorAccent"
+             android:text="Reload Again"
+             android:textColor="@color/colorWhite"
+             android:layout_below="@+id/lblNodata"
+             android:layout_centerHorizontal="true"
+             android:padding="@dimen/dimen_ten"
+             android:layout_marginTop="@dimen/dimen_ten"
+             />
+    </RelativeLayout>
+
+</layout>
