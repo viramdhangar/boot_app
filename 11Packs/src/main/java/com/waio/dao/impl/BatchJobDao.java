@@ -38,7 +38,7 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 	@Override
 	public int insertMatches(final List<MatchesDTO> matchesList) {
 
-		String sql = "insert into matches (unique_id, date, datetime, team1, team2, type, squad, toss_winner_team, winner_team, matchStarted ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE matchStarted=?";
+		String sql = "insert into matches (unique_id, date, datetime, team1, team2, type, squad, toss_winner_team, winner_team, matchStarted ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE matchStarted=?, winner_team=?";
 		for (MatchesDTO match : matchesList) {
 			getJdbcTemplate().update(sql, new Object[] { 
 					match.getUnique_id(), 
@@ -51,7 +51,8 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 					match.getToss_winner_team(),
 					match.getWinner_team(), 
 					match.getMatchStarted(),
-					match.getMatchStarted() 
+					match.getMatchStarted(),
+					match.getWinner_team()
 				});
 		}
 		return matchesList.size();

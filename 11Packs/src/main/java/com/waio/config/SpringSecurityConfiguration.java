@@ -5,6 +5,7 @@ import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -13,6 +14,11 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import com.google.common.collect.ImmutableList;
 
 @Configuration
 @EnableWebSecurity
@@ -53,34 +59,57 @@ public class SpringSecurityConfiguration extends WebSecurityConfigurerAdapter {
 		.antMatchers("/identity/registration").permitAll()
 		.antMatchers("/identity/login").permitAll()
 		.antMatchers("/identity/logout").permitAll()
-		.antMatchers("/sendMobileOTP/*/otp").permitAll()
-		.antMatchers("/verifyMobileOTP/*/otp").permitAll()
-		.antMatchers("/sendEmailOTP/*/otp").permitAll()
-		.antMatchers("/verifyEmailOTP/*/otp").permitAll()
+		.antMatchers("/verification/sendMobileOTP/*/otp").permitAll()
+		.antMatchers("/verification/verifyMobileOTP/*/otp").permitAll()
+		.antMatchers("/verification/sendEmailOTP/*/otp").permitAll()
+		.antMatchers("/verification/verifyEmailOTP/*/otp").permitAll()
 		.antMatchers("/api/v1/matches").permitAll()
 		.antMatchers("/api/job/v1/matchesAPI").permitAll()
 		.antMatchers("/api/v1/leagues/*").permitAll()
 		.antMatchers("/api/v1/winningBreakup/*").permitAll()
 		.antMatchers("/api/v1/squad/*").permitAll()
 		.antMatchers("/api/v1/createTeam").permitAll()
-		.antMatchers("/api/v1/joinLeague").permitAll()
+		.antMatchers("/api/v1/joinLeague/*").permitAll()
 		.antMatchers("/api/v1/allMatchesTeams/*").permitAll()
+		.antMatchers("/api/v1/joinedMatchesAndLeagues/*").permitAll()
 		.antMatchers("/api/v1/teamsOfMatch/*/*").permitAll()
 		.antMatchers("/api/v1/teamView/*/*/*").permitAll()
 		.antMatchers("/api/v1/teamEdit/*/*/*").permitAll()
 		.antMatchers("/api/v1/joinedLeagues/*").permitAll()
 		.antMatchers("/api/v1/joinedLeagues/*/*").permitAll()
 		.antMatchers("/api/v1/joinedLeagueTeams/*/*/*").permitAll()
+		.antMatchers("/api/v1/joinedLeagueAllTeams/*/*").permitAll()
+		.antMatchers("/api/v1/switchTeam/*/*").permitAll()
 		.antMatchers("/api/job/v1/createLeague").permitAll()
 		.antMatchers("/api/job/v1/updateScoreAndPoints/*").permitAll()
-		.antMatchers("/api/job/v1/teamsRankAndPointsInLeague/*/*/*").permitAll()
-		.antMatchers("/api/job/v1/teamDetailWithPoints/*").permitAll()
+		.antMatchers("/api/v1/teamsRankAndPointsInLeague/*/*/*").permitAll()
+		.antMatchers("/api/v1/teamDetailWithPoints/*").permitAll()
 		.antMatchers("/welcome").hasAnyRole("USER", "ADMIN")
 		.antMatchers("/getEmployees").hasAnyRole("USER", "ADMIN")
 		.antMatchers("/addNewEmployee").hasAnyRole("ADMIN")
+		 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() 
+		 .antMatchers(HttpMethod.POST, "/**").permitAll() 
 		.anyRequest().authenticated().and().formLogin().loginPage("/login").permitAll()
 				.and().logout().permitAll();
 
 		http.csrf().disable();
+		//http.cors();
 	}
+	
+	@Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        final CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(ImmutableList.of("*"));
+        configuration.setAllowedMethods(ImmutableList.of("HEAD",
+                "GET", "POST", "PUT", "DELETE", "PATCH"));
+        // setAllowCredentials(true) is important, otherwise:
+        // The value of the 'Access-Control-Allow-Origin' header in the response must not be the wildcard '*' when the request's credentials mode is 'include'.
+        configuration.setAllowCredentials(true);
+        // setAllowedHeaders is important! Without it, OPTIONS preflight request
+        // will fail with 403 Invalid CORS request
+        configuration.setAllowedHeaders(ImmutableList.of("Authorization", "Cache-Control", "Content-Type"));
+        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }

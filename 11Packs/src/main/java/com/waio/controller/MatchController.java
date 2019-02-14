@@ -32,7 +32,7 @@ import com.waio.model.TeamRankPoints;
 import com.waio.model.WinningBreakupDTO;
 import com.waio.service.IMatchService;
 
-@CrossOrigin(origins = "http://localhost:8100", maxAge = 3600)
+@CrossOrigin(origins = {"*"}, maxAge = 3600)
 @RestController
 @RequestMapping({ "/api" })
 public class MatchController {
@@ -45,6 +45,7 @@ public class MatchController {
 		List<MatchesDTO> matches = new ArrayList<MatchesDTO>();
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 		String currentPrincipalName = authentication.getName();
+		System.out.println("currentPrincipalName ::"+currentPrincipalName);
 		try {
 			matches = matchService.getMatches();
 			return matches;
@@ -87,8 +88,8 @@ public class MatchController {
 		return matchSquad;
 	}
 
-	@PostMapping(value = "/v1/createTeam")
-	public String createTeam(@RequestBody MatchTeam matchTeam,
+	@RequestMapping(value = "/v1/createTeam", produces = { "application/JSON" }, method=RequestMethod.POST)
+	public @ResponseBody String createTeam(@RequestBody MatchTeam matchTeam,
 			@RequestParam(value = "id", required = false) String id) throws Exception {
 		String result = StringUtils.EMPTY;
 		if (StringUtils.isNotEmpty(id)) {
@@ -143,11 +144,17 @@ public class MatchController {
 		return matchTeam;
 	}
 
-	@PostMapping(value = "/v1/joinLeague")
-	public @ResponseBody String joinLeague(@RequestBody JoinLeague joinLeague) {
+	//@PostMapping(value = "/v1/joinLeague/{leagueId}")
+	@RequestMapping(value = "/v1/joinLeague/{leagueId}", produces = { "application/JSON" }, method=RequestMethod.POST)
+	public String joinLeague(@PathVariable String leagueId, @RequestBody MatchTeam team) {
 		String message = StringUtils.EMPTY;
-		if(matchService.getMatchLiveStatus(joinLeague.getTeam().getMatchId()).getMatchStarted().equalsIgnoreCase("false")) {
-			message = matchService.joinLeague(joinLeague);
+		if(matchService.getMatchLiveStatus(team.getMatchId()).getMatchStarted().equalsIgnoreCase("false")) {
+			if(matchService.validateSmallOrGrand(leagueId, team.getMatchId(), team.getUniqueNumber()) > 0) {
+				message = "Small leagues can not be joined with multiple teams, less then or equals 10 members leagues considered as small league";
+				throw new ValidationException(message); 
+			} else {
+				message = matchService.joinLeague(team, leagueId);
+			}
 		}
 		return message;
 	}
@@ -160,7 +167,7 @@ public class MatchController {
 	}
 
 	@GetMapping(value = "/v1/joinedMatchesAndLeagues/{uniqueNumber}")
-	public List<MatchLeaguesDTO> getJoinedLeagues(@PathVariable String uniqueNumber) {
+	public List<MatchLeaguesDTO> getJoinedLeagues(@PathVariable String uniqueNumber) throws Exception {
 		List<MatchLeaguesDTO> leagues = new ArrayList<MatchLeaguesDTO>();
 		leagues = matchService.getJoinedMatchLeagues(uniqueNumber);
 		return leagues;
@@ -182,11 +189,12 @@ public class MatchController {
 		return matchTeam;
 	}
 	
-	@PostMapping(value = "/v1/switchTeam/{leagueId}")
-	public String switchTeam(@RequestBody MatchTeam matchTeam, @PathVariable String leagueId) {
+	//@PostMapping(value = "/v1/switchTeam/{leagueId}/{teamIdOld}")
+	@RequestMapping(value = "/v1/switchTeam/{leagueId}/{teamIdOld}", produces = { "application/JSON" }, method=RequestMethod.POST)
+	public String switchTeam(@RequestBody MatchTeam matchTeam, @PathVariable String leagueId, @PathVariable String teamIdOld) {
 		String result = StringUtils.EMPTY;
 		if(matchService.getMatchLiveStatus(matchTeam.getMatchId()).getMatchStarted().equalsIgnoreCase("false")) {
-			result = matchService.switchTeam(matchTeam, leagueId);
+			result = matchService.switchTeam(matchTeam, leagueId, teamIdOld);
 		}
 		return result;
 	}

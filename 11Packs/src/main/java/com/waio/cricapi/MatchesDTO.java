@@ -11,6 +11,7 @@ public class MatchesDTO {
 
 	private String unique_id;
 	private Date date;
+	private String dateShow;
 	private Time time;
 	@JsonProperty("dateTimeGMT")
 	private Date datetime;
@@ -29,6 +30,71 @@ public class MatchesDTO {
 	private String formattedTeamName;	
 	private String tournamentName;
 	private String isActive;
+	private String team1Name;
+	private String team2Name;
+	private String team1Url;
+	private String team2Url;
+	
+	/**
+	 * @return the dateShow
+	 */
+	public String getDateShow() {
+		return dateShow;
+	}
+	/**
+	 * @param dateShow the dateShow to set
+	 */
+	public void setDateShow(String dateShow) {
+		this.dateShow = dateShow;
+	}
+	/**
+	 * @return the team1Url
+	 */
+	public String getTeam1Url() {
+		return team1Url;
+	}
+	/**
+	 * @param team1Url the team1Url to set
+	 */
+	public void setTeam1Url(String team1Url) {
+		this.team1Url = team1Url;
+	}
+	/**
+	 * @return the team2Url
+	 */
+	public String getTeam2Url() {
+		return team2Url;
+	}
+	/**
+	 * @param team2Url the team2Url to set
+	 */
+	public void setTeam2Url(String team2Url) {
+		this.team2Url = team2Url;
+	}
+	/**
+	 * @return the team1Name
+	 */
+	public String getTeam1Name() {
+		return team1Name;
+	}
+	/**
+	 * @param team1Name the team1Name to set
+	 */
+	public void setTeam1Name(String team1Name) {
+		this.team1Name = team1Name;
+	}
+	/**
+	 * @return the team2Name
+	 */
+	public String getTeam2Name() {
+		return team2Name;
+	}
+	/**
+	 * @param team2Name the team2Name to set
+	 */
+	public void setTeam2Name(String team2Name) {
+		this.team2Name = team2Name;
+	}
 	/**
 	 * @return the isActive
 	 */

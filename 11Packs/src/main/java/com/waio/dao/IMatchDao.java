@@ -23,7 +23,7 @@ public interface IMatchDao {
 	List<MatchTeam> getCreatedTeams(String uniqueNumber);
 	List<MatchTeam> getCreatedTeamsOfMatch(String uniqueNumber, String matchId);
 	List<MatchTeamBean> getTeam(String uniqueNumber, String matchId, String teamId);
-	String joinLeague(JoinLeague joinLeague);
+	String joinLeague(MatchTeam team, String leagueId);
 	List<WinningBreakupDTO> getWinningBreakup(String LeagueId);
 	void setTeamName (MatchTeam matchTeam);
 	int deleteTeam(String teamId);
@@ -31,8 +31,9 @@ public interface IMatchDao {
 	List<LeagueDTO> getJoinedLeagues(String uniqueNumber, String matchId);
 	List<MatchLeaguesBean> getJoinedMatchLeagues(String uniqueNumber);
 	List<MatchTeam> getJoinedLeagueTeams(String uniqueNumber, String matchId, String leagueId);
-	int switchTeam(MatchTeam matchTeam, String leagueId);
+	int switchTeam(MatchTeam matchTeam, String leagueId, String teamIdOld);
 	List<MatchTeam> getJoinedLeagueAllTeams(String matchId, String leagueId);
 	List<TeamRankPoints> getTeamsRankAndPoints(String uniqueNumber, String matchId, String leagueId);
 	List<MatchTeamBean> getTeamDetailsWithPoints(String teamId);
+	int validateSmallOrGrand(String leagueId, String matchId, String createdId);
 }

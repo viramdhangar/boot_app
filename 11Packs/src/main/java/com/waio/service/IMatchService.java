@@ -22,15 +22,16 @@ public interface IMatchService {
 	List<MatchTeam> getCreatedTeamsOfMatch(String uniqueNumber, String matchId);
 	MatchTeam getTeam(String uniqueNumber, String matchId, String teamId);
 	List<PlayerDTO> setSelectedPlayersInSquad(List<PlayerDTO> squad, MatchTeam matchTeam);
-	String joinLeague(JoinLeague joinLeague);
+	String joinLeague(MatchTeam team, String leagueId);
 	List<WinningBreakupDTO> getWinningBreakup(String LeagueId);
 	String teamValidations(MatchTeam team);
 	MatchesDTO getMatchLiveStatus (String matchId);
 	List<LeagueDTO> getJoinedLeagues(String uniqueNumber, String matchId);
-	List<MatchLeaguesDTO> getJoinedMatchLeagues(String uniqueNumber);
+	List<MatchLeaguesDTO> getJoinedMatchLeagues(String uniqueNumber) throws Exception;
 	List<MatchTeam> getJoinedLeagueTeams(String uniqueNumber, String matchId, String leagueId);
-	String switchTeam(MatchTeam matchTeam, String leagueId);
+	String switchTeam(MatchTeam matchTeam, String leagueId, String teamIdOld);
 	List<MatchTeam> getJoinedLeagueAllTeams(String matchId, String leagueId);
 	List<TeamRankPoints> getTeamsRankAndPoints(String uniqueNumber, String matchId, String leagueId);
 	List<MatchTeamBean> getTeamDetailsWithPoints(String teamId);
+	int validateSmallOrGrand(String leagueId, String matchId, String createdId);
 }

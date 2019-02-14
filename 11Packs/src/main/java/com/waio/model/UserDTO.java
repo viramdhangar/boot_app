@@ -3,6 +3,7 @@
  */
 package com.waio.model;
 
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;
@@ -21,9 +22,60 @@ public class UserDTO {
 	private String lastName;
 	private String middleName;
 	private String state;
+	private String gender;
+	private Date dob;
 	private String referralCode;
 	private List<GrantedAuthority> authorities;
 	private String role;
+	
+	/**
+	 * 
+	 */
+	public UserDTO() {
+		super();
+	}
+
+	/**
+	 * @param userName
+	 * @param password
+	 * @param email
+	 * @param uniqueNumber
+	 */
+	public UserDTO(String userName, String password, String email, String uniqueNumber) {
+		super();
+		this.userName = userName;
+		this.password = password;
+		this.email = email;
+		this.uniqueNumber = uniqueNumber;
+	}
+
+	/**
+	 * @return the gender
+	 */
+	public String getGender() {
+		return gender;
+	}
+
+	/**
+	 * @param gender the gender to set
+	 */
+	public void setGender(String gender) {
+		this.gender = gender;
+	}
+	/**
+	 * @return the dob
+	 */
+	public Date getDob() {
+		return dob;
+	}
+
+	/**
+	 * @param dob the dob to set
+	 */
+	public void setDob(Date dob) {
+		this.dob = dob;
+	}
+
 	/**
 	 * @return the role
 	 */

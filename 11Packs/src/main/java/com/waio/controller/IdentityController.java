@@ -3,10 +3,6 @@
  */
 package com.waio.controller;
 
-import java.io.IOException;
-
-import javax.mail.MessagingException;
-import javax.mail.internet.AddressException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.validation.ValidationException;
@@ -14,8 +10,8 @@ import javax.validation.ValidationException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -32,6 +28,7 @@ import com.waio.service.impl.UserService;
  * This controller will be used for authorization and authentication
  *
  */
+@CrossOrigin(origins = {"*"}, maxAge = 3600)
 @RestController
 @RequestMapping({ "/identity" })
 public class IdentityController {
@@ -42,7 +39,8 @@ public class IdentityController {
 	@Autowired
 	JdbcUserDetailsManager jdbcUserDetailsManager;
 	
-	@PostMapping(value = "/registration")
+	//@PostMapping(value = "/registration")
+	@RequestMapping(value = "/registration", produces = { "application/JSON" }, method=RequestMethod.POST)
 	public String registration(@RequestBody(required = false) UserDTO userDTO) throws Exception {	
 		
 		if(userDTO == null) {
@@ -82,15 +80,15 @@ public class IdentityController {
         return "login";
     }*/
 	
-	@RequestMapping(value = "/login", method=RequestMethod.POST)
-	public Object login(@RequestBody(required = false) UserDTO userDTO, HttpServletRequest request, HttpSession session) throws BadRequestException, ResourceNotFoundException {	
+	@RequestMapping(value = "/login", produces = { "application/JSON" } ,method=RequestMethod.POST)
+	public UserDTO login(@RequestBody(required = false) UserDTO userDTO, HttpServletRequest request, HttpSession session) throws BadRequestException, ResourceNotFoundException {	
 		
 		if(userDTO == null) {
 			throw new ResourceNotFoundException("Please provide valid information");
 		}
 		if(request.getSession(true)!=null) {
 			session = request.getSession();
-			session.setMaxInactiveInterval(30);
+			//session.setMaxInactiveInterval(30);
 		}	
 		if (userService.validateDuplicateUser(userDTO) > 0) {
 			UserDTO userDTODB = userService.login(userDTO);

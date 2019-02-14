@@ -13,7 +13,7 @@ public class TeamRankPoints {
 	private String createdId;
 	private String teamId;
 	private String teamName;
-	private double points;
+	private String points;
 	/**
 	 * @return the teamName
 	 */
@@ -65,13 +65,14 @@ public class TeamRankPoints {
 	/**
 	 * @return the points
 	 */
-	public double getPoints() {
+	public String getPoints() {
 		return points;
 	}
 	/**
 	 * @param points the points to set
 	 */
-	public void setPoints(double points) {
+	public void setPoints(String points) {
 		this.points = points;
 	}
+	
 }

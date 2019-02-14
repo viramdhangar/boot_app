@@ -24,11 +24,11 @@ public class PlayerDTO {
     private String born;
     private String battingStyle;
     private String bowlingStyle;
-    private String selected;
+    private boolean selected;
     private String captain;
     private String viceCaptain;
     private String playingTeamName;
-    private String earnedPoints;
+    private double points;
     private String xi;
     private PlayerProfileInfo data;
 	/**
@@ -44,16 +44,16 @@ public class PlayerDTO {
 		this.xi = xi;
 	}
 	/**
-	 * @return the earnedPoints
+	 * @return the points
 	 */
-	public String getEarnedPoints() {
-		return earnedPoints;
+	public double getPoints() {
+		return points;
 	}
 	/**
-	 * @param earnedPoints the earnedPoints to set
+	 * @param points the points to set
 	 */
-	public void setEarnedPoints(String earnedPoints) {
-		this.earnedPoints = earnedPoints;
+	public void setPoints(double points) {
+		this.points = points;
 	}
 	/**
 	 * @return the playingTeamName
@@ -94,13 +94,13 @@ public class PlayerDTO {
 	/**
 	 * @return the selected
 	 */
-	public String getSelected() {
+	public boolean isSelected() {
 		return selected;
 	}
 	/**
 	 * @param selected the selected to set
 	 */
-	public void setSelected(String selected) {
+	public void setSelected(boolean selected) {
 		this.selected = selected;
 	}
 	/**

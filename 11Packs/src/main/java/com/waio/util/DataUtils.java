@@ -3,9 +3,13 @@
  */
 package com.waio.util;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import org.apache.commons.lang3.StringUtils;
 
 import com.waio.cricapi.MatchesDTO;
+import com.waio.model.UserDTO;
 
 /**
  * @author Viramm
@@ -65,5 +69,16 @@ public class DataUtils {
 		}else {
 			return 0.0;
 		}
+	}
+	
+	/*
+	 *
+	 * Used to get current logged in user information
+	 * 
+	 */
+	public static UserDTO getCurrentUser(HttpServletRequest req) {
+		HttpSession session = req.getSession();
+		UserDTO user = (UserDTO) session.getAttribute("user");
+		return user;
 	}
 }

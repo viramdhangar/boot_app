@@ -27,6 +27,7 @@ public class UserDao extends AbstractDaoSupport implements IUserDao {
 
 	@Override
 	public int createUser(UserDTO userDTO) {
+		try {
 		int savedRecords = getJdbcTemplate().update(UserSql.CREATE_USER_SQL,
 				new Object[] { userDTO.getUserName(), userDTO.getPassword(), userDTO.getUniqueNumber(),
 						userDTO.getEmail(), userDTO.getFirstName(), userDTO.getLastName(), userDTO.getMiddleName(),
@@ -38,6 +39,10 @@ public class UserDao extends AbstractDaoSupport implements IUserDao {
 			insertReferralUser(userDTO);	
 		}
 		return savedRecords;
+		}catch(Exception e){
+			System.out.println(e);
+			return 0;
+		}
 	}
 
 	private int referralNumber(UserDTO userDTO) {
