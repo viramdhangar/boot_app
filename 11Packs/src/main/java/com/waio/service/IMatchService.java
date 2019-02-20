@@ -3,6 +3,7 @@ package com.waio.service;
 import java.util.List;
 
 import com.waio.cricapi.MatchesDTO;
+import com.waio.model.AccountDTO;
 import com.waio.model.JoinLeague;
 import com.waio.model.LeagueDTO;
 import com.waio.model.MatchLeaguesDTO;
@@ -34,4 +35,7 @@ public interface IMatchService {
 	List<TeamRankPoints> getTeamsRankAndPoints(String uniqueNumber, String matchId, String leagueId);
 	List<MatchTeamBean> getTeamDetailsWithPoints(String teamId);
 	int validateSmallOrGrand(String leagueId, String matchId, String createdId);
+	MatchesDTO getMatch(String matchId);
+	AccountDTO account(String userName);
+	AccountDTO addBalance(AccountDTO account);
 }

@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.waio.cricapi.MatchesDTO;
 import com.waio.exceptions.ResourceNotFoundException;
+import com.waio.model.AccountDTO;
 import com.waio.model.JoinLeague;
 import com.waio.model.LeagueDTO;
 import com.waio.model.MatchLeaguesDTO;
@@ -52,6 +53,11 @@ public class MatchController {
 		}catch(Exception e) {
 			throw new ResourceNotFoundException("Please Connect with Support team");
 		}
+	}
+	
+	@GetMapping("/v1/match/{matchId}")
+	public MatchesDTO getMatch(@PathVariable String matchId) throws ResourceNotFoundException {
+		return matchService.getMatch(matchId);
 	}
 
 	@RequestMapping(value = "/v1/leagues/{matchId}", produces = { "application/JSON" })
@@ -211,5 +217,17 @@ public class MatchController {
 	public List<MatchTeamBean> getTeamsRankAndPoints(@PathVariable String teamId) {
 		List<MatchTeamBean> teamDetailWithPoints = matchService.getTeamDetailsWithPoints(teamId);
 		return teamDetailWithPoints;
+	}
+	
+	@RequestMapping(value = "/v1/addMoney", produces = { "application/JSON" }, method=RequestMethod.POST)
+	public @ResponseBody AccountDTO addBalance(@RequestBody AccountDTO account) {
+		AccountDTO acc = matchService.addBalance(account);
+		return acc;
+	}
+	
+	@GetMapping("/v1/account/{userName}")
+	public AccountDTO account(@PathVariable String userName) throws ResourceNotFoundException {
+		AccountDTO account = matchService.account(userName);
+		return account;
 	}
 }

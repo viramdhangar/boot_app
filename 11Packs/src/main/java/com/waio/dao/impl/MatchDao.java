@@ -1,5 +1,6 @@
 package com.waio.dao.impl;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Repository;
 
 import com.waio.cricapi.MatchesDTO;
 import com.waio.dao.IMatchDao;
+import com.waio.model.AccountDTO;
 import com.waio.model.JoinLeague;
 import com.waio.model.LeagueDTO;
 import com.waio.model.MatchLeaguesBean;
@@ -25,6 +27,8 @@ import com.waio.model.MatchTeamBean;
 import com.waio.model.PlayerDTO;
 import com.waio.model.TeamRankPoints;
 import com.waio.model.WinningBreakupDTO;
+
+import jdk.nashorn.internal.runtime.regexp.joni.exception.InternalException;
 
 @Repository("MatchDao")
 public class MatchDao extends AbstractDaoSupport implements IMatchDao {
@@ -43,7 +47,15 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 				new BeanPropertyRowMapper<MatchesDTO>(MatchesDTO.class));
 		return matches;
 	}
-
+	@Override
+	public MatchesDTO getMatch(String matchId) {
+		String sql = "SELECT unique_id, DATE_FORMAT(datetime, '%Y-%m-%d') date, DATE_FORMAT(datetime,'%H:%i:%s') time, team1, datetime, team2, type, squad, toss_winner_team, winner_team, matchStarted, is_active FROM MATCHES where unique_id=?";
+		// AND MATCH_START_TIME>=CURRENT_TIME
+		MatchesDTO match = getJdbcTemplate().queryForObject(sql, new Object[] { matchId },
+				new BeanPropertyRowMapper<MatchesDTO>(MatchesDTO.class));
+		return match;
+	}
+	
 	@Override
 	public List<LeagueDTO> getLeagues(String matchId) {
 		String sql = "select ml.id, ml.league_id, league.league, league.size, league.entry_fee, league.winning_amount, league.winners, ml.match_id, ml.league_id breakupId, ml.joined_team from league, match_leagues ml where league.id = ml.league_id and ml.match_id=? and ml.status is null";
@@ -208,8 +220,13 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 	
 	@Override
 	public List<TeamRankPoints> getTeamsRankAndPoints(String uniqueNumber, String matchId, String leagueId){
+		
+		//String sql="select count(player_id) from player_points where match_id=?";
+		//int point = getJdbcTemplate().queryForObject(sql, new Object[] { matchId }, Integer.class);
+		
 		//String sql = "select SUM(player_points.points) as points, team_player.team_id, team.created_id, team.name teamName, ROW_NUMBER() OVER (ORDER BY SUM(player_points.points) desc) teamRank, ROW_NUMBER() OVER (ORDER BY CASE when team.created_id =? then 1 else 2 end, SUM(player_points.points) desc) row_num from team_player, player_points, team, league_teams where team_player.player_id= player_points.player_id and player_points.Match_id=? and team_player.team_id=team.id and team.id = league_teams.team_id and league_teams.league_id=? group by team_player.team_id";
-		String sql="select SUM(pp.points) as points,  tp.team_id, team.name teamName, team.match_id, team.created_id ,ROW_NUMBER() OVER (ORDER BY SUM(pp.points) desc) teamRank from league_teams lt, team, team_player tp left join player_points pp ON tp.player_id = pp.player_id and pp.match_id=?  where lt.team_id = tp.team_id and lt.team_id= team.id and lt.league_id=? group by lt.team_id";
+		String sql="select IFNULL(SUM(pp.points), 0) as points,  tp.team_id, team.name teamName, team.match_id, team.created_id from league_teams lt, team, team_player tp left join player_points pp ON tp.player_id = pp.player_id and pp.match_id=?  where lt.team_id = tp.team_id and lt.team_id= team.id and lt.league_id=? group by lt.team_id order by points desc";
+		
 		List<TeamRankPoints> teamRank = getJdbcTemplate().query(sql, new Object[] { matchId, leagueId },
 				new BeanPropertyRowMapper<TeamRankPoints>(TeamRankPoints.class));
 		return teamRank;	
@@ -221,6 +238,74 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 		List<MatchTeamBean> teamDetailWithPoints = getJdbcTemplate().query(sql, new Object[] { teamId },
 				new BeanPropertyRowMapper<MatchTeamBean>(MatchTeamBean.class));
 		return teamDetailWithPoints;	
+	}
+	
+	@Override
+	public AccountDTO account(String userName) {
+		String sql = "select username, amount, deposited_amount, bonus_amount, winning from account where username=?";
+		AccountDTO dto = new AccountDTO();
+		try {
+		List<AccountDTO> accountList = getJdbcTemplate().query(sql, new Object[] { userName },
+				new BeanPropertyRowMapper<AccountDTO>(AccountDTO.class));
+		if(accountList.size()>0) {
+			dto = accountList.get(0);
+		}
+		return dto;
+		}catch(Exception e) {
+			return null;
+		}
+	}
+	
+	@Override
+	public AccountDTO addBalance(AccountDTO account) {
+		// add transaction
+		AccountDTO acc = new AccountDTO();
+		
+		AccountDTO existing  = account(account.getUsername());
+		if(existing!=null) {
+			if(existing.getDepositedAmount()!=null ) {
+				account.setDepositedAmount(account.getDepositedAmount().add(existing.getDepositedAmount()));
+			}
+			if(existing.getBonusAmount()!=null ) {
+				account.setBonusAmount(account.getBonusAmount().add(existing.getBonusAmount()));
+			}
+			
+		}
+		try {
+			if (addTransaction(account) > 0) {
+				String sql = "insert into account ( username, amount, deposited_amount, bonus_amount, updated) values (?, ?, ?, ?, current_date()) ON DUPLICATE KEY UPDATE  amount = ?, deposited_amount = ?, bonus_amount = ?, updated=current_date() ";
+				BigDecimal bd = null;
+				if(account.getBonusAmount() !=null) {
+					bd = account.getDepositedAmount().add(account.getBonusAmount());
+				}else {
+					bd = account.getDepositedAmount();
+				}
+				
+				int i = getJdbcTemplate().update(sql,
+						new Object[] { account.getUsername(),
+								bd,
+								account.getDepositedAmount(), account.getBonusAmount(), bd, account.getDepositedAmount(), account.getBonusAmount() });
+				if (i > 0) {
+					acc = account(account.getUsername());
+				} else {
+					throw new InternalException("Somthing is wrong");
+				}
+			}
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+		return acc;
+	}
+
+	private int addTransaction(AccountDTO account) {
+		String sql = "insert into account_transaction ( username, deposited_amount, bonus_amount, promotion, status, created,  created_id) values (?, ?, ?, ?, ?, current_date(), ?)";
+		try {
+			int i = getJdbcTemplate().update(sql, new Object[] { account.getUsername(), account.getDepositedAmount(),
+					account.getBonusAmount(), account.getPromotion(), account.getStatus(), account.getUsername() });
+			return i;
+		} catch (Exception e) {
+			return 0;
+		}
 	}
 	
 }

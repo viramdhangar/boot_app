@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import com.waio.cricapi.MatchesDTO;
 import com.waio.dao.IMatchDao;
+import com.waio.model.AccountDTO;
 import com.waio.model.LeagueDTO;
 import com.waio.model.MatchLeaguesBean;
 import com.waio.model.MatchLeaguesDTO;
@@ -57,6 +58,22 @@ public class MatchService implements IMatchService{
 		return matchesList;
 	}
 
+	@Override
+	public MatchesDTO getMatch(String matchId) {
+		MatchesDTO matches = matchDao.getMatch(matchId);
+		SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy");
+		matches.setTeam1Short(DataUtils.getShortForm(matches.getTeam1()));
+		matches.setTeam2Short(DataUtils.getShortForm(matches.getTeam2()));
+		matches.setFormattedTeamName(matches.getTeam1Short() + "  vs  " + matches.getTeam2Short());
+		matches.setTeam1Name(matches.getTeam1());
+		matches.setTeam2Name(matches.getTeam2());
+		DataUtils.getMatchTypeShort(matches);
+		String strDate = formatter.format(matches.getDatetime());
+		matches.setDateShow(strDate);
+		LOG.info("Getting matches list.");
+		return matches;
+	}
+	
 	@Override
 	public List<LeagueDTO> getLeagues(String matchId) {
 		return matchDao.getLeagues(matchId);
@@ -360,4 +377,17 @@ public class MatchService implements IMatchService{
 	public int validateSmallOrGrand(String leagueId, String matchId, String createdId) {
 		return matchDao.validateSmallOrGrand(leagueId, matchId, createdId);
 	}
+
+	@Override
+	public AccountDTO account(String userName) {
+		return matchDao.account(userName);
+	}
+
+	@Override
+	public AccountDTO addBalance(AccountDTO account) {
+		account.setStatus("Credit");
+		return matchDao.addBalance(account);
+	}
+
+
 }
