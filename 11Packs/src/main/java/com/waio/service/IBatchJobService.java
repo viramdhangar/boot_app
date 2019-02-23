@@ -17,7 +17,7 @@ public interface IBatchJobService {
 	/**
 	 * @return
 	 */
-	public NewMatchesData insertNewMatches(); 
+	public NewMatchesData insertNewMatches() throws Exception; 
 	/**
 	 * @param leagueDTO
 	 * @return

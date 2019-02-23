@@ -22,7 +22,13 @@ public class BatchJobController {
 	
 	@GetMapping("/v1/matchesAPI")
 	public NewMatchesData matchesAPI() {
-		return batchJobService.insertNewMatches();
+		try {
+			return batchJobService.insertNewMatches();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
 	@PostMapping("/v1/createLeague")

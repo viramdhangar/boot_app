@@ -15,7 +15,7 @@ import com.waio.model.WinningBreakupDTO;
 
 public interface IMatchService {
 
-	public List<MatchesDTO> getMatches();
+	public List<MatchesDTO> getMatches() throws Exception;
 	public List<LeagueDTO> getLeagues(String matchId);
 	public List<PlayerDTO> getSquad(String matchId);
 	public String createTeam(MatchTeam team);
@@ -38,4 +38,6 @@ public interface IMatchService {
 	MatchesDTO getMatch(String matchId);
 	AccountDTO account(String userName);
 	AccountDTO addBalance(AccountDTO account);
+	MatchTeam getTeam(String teamId);
+	LeagueDTO getLeague(String leagueId);
 }

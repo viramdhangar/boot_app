@@ -67,6 +67,7 @@ public class SpringSecurityConfiguration extends WebSecurityConfigurerAdapter {
 		.antMatchers("/api/v1/match/*").permitAll()
 		.antMatchers("/api/job/v1/matchesAPI").permitAll()
 		.antMatchers("/api/v1/leagues/*").permitAll()
+		.antMatchers("/api/v1/league/*").permitAll()
 		.antMatchers("/api/v1/winningBreakup/*").permitAll()
 		.antMatchers("/api/v1/squad/*").permitAll()
 		.antMatchers("/api/v1/createTeam").permitAll()

@@ -3,6 +3,9 @@
  */
 package com.waio.service.impl;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -50,10 +53,12 @@ public class BatchJobService implements IBatchJobService{
 	private IBatchJobDao batchJobDao;
 	
 	@Override //@Autowired
-	public NewMatchesData insertNewMatches() {
+	public NewMatchesData insertNewMatches() throws Exception {
 		
 		NewMatchesData newMatchesData = cricApiService.newMatches();
 		List<MatchesDTO> matchesList = newMatchesData.getMatches();
+		SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
 		
 		Date today = new Date();	
 		long ltime=today.getTime()+2*24*60*60*1000;
@@ -64,6 +69,19 @@ public class BatchJobService implements IBatchJobService{
 		Iterator<MatchesDTO> it = matchesList.iterator();
 		while(it.hasNext()) {
 			MatchesDTO matches = it.next();
+			
+			String strDate= formatter.format(matches.getDatetime());  
+			Date matchDate = format.parse(strDate);
+			
+			String strToday= formatter.format(today);  
+			Date todayDate = format.parse(strToday);
+			if(StringUtils.isNotEmpty(matches.getWinner_team()) || StringUtils.isNotBlank(matches.getWinner_team())) {
+				matches.setMatchStatus("COMPLETED");
+			}else if ((StringUtils.isEmpty(matches.getWinner_team()) || StringUtils.isBlank(matches.getWinner_team())) && matchDate.after(todayDate)) {
+				matches.setMatchStatus("UPCOMING");
+			}else {
+				matches.setMatchStatus("LIVE");
+			}
 			if((matches.getDatetime().equals(minusOneDay) || matches.getDatetime().after(minusOneDay)) && matches.getDatetime().before(plusTwoDays)) {
 				if(StringUtils.isEmpty(matches.getUnique_id()) || StringUtils.isEmpty(matches.getType()) || StringUtils.isEmpty(matches.getTeam1()) || StringUtils.isEmpty(matches.getTeam2()) || matches.getDatetime()==null) {
 					it.remove();

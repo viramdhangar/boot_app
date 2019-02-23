@@ -34,7 +34,20 @@ public class MatchesDTO {
 	private String team2Name;
 	private String team1Url;
 	private String team2Url;
+	private String matchStatus;
 	
+	/**
+	 * @return the matchStatus
+	 */
+	public String getMatchStatus() {
+		return matchStatus;
+	}
+	/**
+	 * @param matchStatus the matchStatus to set
+	 */
+	public void setMatchStatus(String matchStatus) {
+		this.matchStatus = matchStatus;
+	}
 	/**
 	 * @return the dateShow
 	 */

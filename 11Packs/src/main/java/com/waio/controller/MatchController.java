@@ -72,6 +72,17 @@ public class MatchController {
 			throw new ResourceNotFoundException("Please Connect with Support team");
 		}
 	}
+	
+	@RequestMapping(value = "/v1/league/{leagueId}", produces = { "application/JSON" })
+	public LeagueDTO getLeague(@PathVariable String leagueId) throws ResourceNotFoundException {
+		LeagueDTO league = new LeagueDTO();
+		try {
+			league = matchService.getLeague(leagueId);
+			return league;
+		} catch (Exception e) {
+			throw new ResourceNotFoundException("Please Connect with Support team");
+		}
+	}
 
 	@GetMapping(value = "/v1/winningBreakup/{breakupId}")
 	public List<WinningBreakupDTO> getWinningBreakup(@PathVariable String breakupId) throws ResourceNotFoundException {

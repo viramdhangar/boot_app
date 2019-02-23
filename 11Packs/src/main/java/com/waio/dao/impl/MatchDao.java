@@ -41,7 +41,7 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 
 	@Override
 	public List<MatchesDTO> getMatches() {
-		String sql = "SELECT unique_id, DATE_FORMAT(datetime, '%Y-%m-%d') date, DATE_FORMAT(datetime,'%H:%i:%s') time, team1, datetime, team2, type, squad, toss_winner_team, winner_team, matchStarted, is_active FROM MATCHES where date>=current_date() and date<=(current_date()+2) and matchStarted='false' order by datetime asc";
+		String sql = "SELECT unique_id, DATE_FORMAT(datetime, '%Y-%m-%d') date, DATE_FORMAT(datetime,'%H:%i:%s') time, team1, datetime, team2, type, squad, toss_winner_team, winner_team, matchStarted, is_active FROM MATCHES where datetime>current_date() and date<=(current_date()+2) and matchStarted='false' order by datetime asc";
 		// AND MATCH_START_TIME>=CURRENT_TIME
 		List<MatchesDTO> matches = getJdbcTemplate().query(sql, new Object[] {},
 				new BeanPropertyRowMapper<MatchesDTO>(MatchesDTO.class));
@@ -65,6 +65,18 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 	}
 	
 	@Override
+	public LeagueDTO getLeague(String leagueId) {
+		LeagueDTO leagueDTO = new LeagueDTO();
+		String sql = "select ml.id, ml.league_id, league.league, league.size, league.entry_fee, league.winning_amount, league.winners, ml.match_id, ml.league_id breakupId, ml.joined_team from league, match_leagues ml where league.id = ml.league_id and ml.id=? and ml.status is null";
+		List<LeagueDTO> leagues = getJdbcTemplate().query(sql, new Object[] { leagueId },
+				new BeanPropertyRowMapper<LeagueDTO>(LeagueDTO.class));
+		if(leagues.size()>0) {
+			leagueDTO = leagues.get(0);
+		}
+		return leagueDTO;
+	}
+	
+	@Override
 	public List<LeagueDTO> getJoinedLeagues(String uniqueNumber, String matchId) {
 		String sql = "select distinct ml.id, league.league, league.size, league.entry_fee, league.winning_amount, league.winners, ml.joined_team, ml.status  from league_teams lt, match_leagues ml, league where lt.league_id = ml.id and ml.league_id= league.id and lt.match_id = ml.match_id and lt.created_id = ? and lt.match_id=?";
 		List<LeagueDTO> leagues = getJdbcTemplate().query(sql, new Object[] { uniqueNumber, matchId },
@@ -74,7 +86,7 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 	
 	@Override
 	public List<MatchLeaguesBean> getJoinedMatchLeagues(String uniqueNumber) {
-		String sql = "select matches.unique_id, matches.team1, matches.team2, matches.datetime, DATE_FORMAT(datetime,'%H:%i:%s') time, matches.matchStarted, matches.match_status, matches.is_active, matches.type, ml.id, league.league, league.size, league.entry_fee, league.winning_amount, league.winners, ml.joined_team, ml.status, ml.league_id breakupId from league_teams lt, match_leagues ml, league, matches where lt.league_id = ml.id and ml.league_id= league.id and lt.match_id = ml.match_id and ml.match_id = matches.unique_id and lt.created_id = ? order by matches.unique_id";
+		String sql = "select matches.unique_id, matches.team1, matches.team2, matches.datetime, DATE_FORMAT(datetime,'%H:%i:%s') time, matches.matchStarted, matches.match_status, matches.is_active, matches.type, ml.id, league.league, league.size, league.entry_fee, league.winning_amount, league.winners, ml.joined_team, ml.status, ml.league_id breakupId, matches.winner_team from league_teams lt, match_leagues ml, league, matches where lt.league_id = ml.id and ml.league_id= league.id and lt.match_id = ml.match_id and ml.match_id = matches.unique_id and lt.created_id = ? and matches.is_active='Y' order by matches.unique_id";
 		List<MatchLeaguesBean> matchLeagues = getJdbcTemplate().query(sql, new Object[] { uniqueNumber },
 				new BeanPropertyRowMapper<MatchLeaguesBean>(MatchLeaguesBean.class));
 		return matchLeagues;
@@ -106,8 +118,8 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 				PlayerDTO players = team.getPlayers().get(i);
 				ps.setString(1, team.getId());
 				ps.setString(2, players.getPid());
-				ps.setString(3, players.getCaptain());
-				ps.setString(4, players.getViceCaptain());
+				ps.setString(3, String.valueOf(players.isCaptain()));
+				ps.setString(4, String.valueOf(players.isViceCaptain()));
 				ps.setString(5, players.getPlayingTeamName());
 			}
 
@@ -133,6 +145,17 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 		String sql = "insert into team (name, match_id, created_id) values (?, ?, ?)";
 		getJdbcTemplate().update(sql, new Object[] { matchTeam.getTeamName(), matchTeam.getMatchId(), matchTeam.getUniqueNumber() });
 		return getJdbcTemplate().queryForObject("SELECT id from team where name=? and match_id=? and created_id=?", new Object[] { matchTeam.getTeamName(), matchTeam.getMatchId(), matchTeam.getUniqueNumber() }, BigInteger.class);
+	}
+	
+	@Override
+	public MatchTeam getTeam(String teamId) {
+		MatchTeam matchTeam = new MatchTeam();
+		String sql = "select id, name teamName, match_id, created_id from team where id=?";
+		List<MatchTeam> teamList = getJdbcTemplate().query(sql, new Object[] { teamId }, new BeanPropertyRowMapper<MatchTeam>(MatchTeam.class));
+		if(teamList.size() > 0) {
+			matchTeam = teamList.get(0);
+		}
+		return matchTeam;
 	}
 	
 	@Override
@@ -225,7 +248,7 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 		//int point = getJdbcTemplate().queryForObject(sql, new Object[] { matchId }, Integer.class);
 		
 		//String sql = "select SUM(player_points.points) as points, team_player.team_id, team.created_id, team.name teamName, ROW_NUMBER() OVER (ORDER BY SUM(player_points.points) desc) teamRank, ROW_NUMBER() OVER (ORDER BY CASE when team.created_id =? then 1 else 2 end, SUM(player_points.points) desc) row_num from team_player, player_points, team, league_teams where team_player.player_id= player_points.player_id and player_points.Match_id=? and team_player.team_id=team.id and team.id = league_teams.team_id and league_teams.league_id=? group by team_player.team_id";
-		String sql="select IFNULL(SUM(pp.points), 0) as points,  tp.team_id, team.name teamName, team.match_id, team.created_id from league_teams lt, team, team_player tp left join player_points pp ON tp.player_id = pp.player_id and pp.match_id=?  where lt.team_id = tp.team_id and lt.team_id= team.id and lt.league_id=? group by lt.team_id order by points desc";
+		String sql="select s.points, s.team_id , s.teamName, s.match_id, s.created_id, IF(s.points=@_last_age,@curRank:=@curRank,@curRank:=@_sequence) AS teamRank, @_sequence:=@_sequence+1,@_last_age:=s.points from (select IFNULL(SUM(pp.points), 0) as points,  tp.team_id, team.name teamName, team.match_id, team.created_id from league_teams lt, team, team_player tp left join player_points pp ON tp.player_id = pp.player_id and pp.match_id=? where lt.team_id = tp.team_id and lt.team_id= team.id and lt.league_id=? group by lt.team_id order by IFNULL(SUM(pp.points), 0) desc) s, (SELECT @curRank := 1, @_sequence:=1, @_last_age:=0) r";
 		
 		List<TeamRankPoints> teamRank = getJdbcTemplate().query(sql, new Object[] { matchId, leagueId },
 				new BeanPropertyRowMapper<TeamRankPoints>(TeamRankPoints.class));

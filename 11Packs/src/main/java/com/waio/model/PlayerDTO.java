@@ -25,8 +25,8 @@ public class PlayerDTO {
     private String battingStyle;
     private String bowlingStyle;
     private boolean selected;
-    private String captain;
-    private String viceCaptain;
+    private boolean captain;
+    private boolean viceCaptain;
     private String playingTeamName;
     private double points;
     private String xi;
@@ -70,25 +70,25 @@ public class PlayerDTO {
 	/**
 	 * @return the captain
 	 */
-	public String getCaptain() {
+	public boolean isCaptain() {
 		return captain;
 	}
 	/**
 	 * @param captain the captain to set
 	 */
-	public void setCaptain(String captain) {
+	public void setCaptain(boolean captain) {
 		this.captain = captain;
 	}
 	/**
 	 * @return the viceCaptain
 	 */
-	public String getViceCaptain() {
+	public boolean isViceCaptain() {
 		return viceCaptain;
 	}
 	/**
 	 * @param viceCaptain the viceCaptain to set
 	 */
-	public void setViceCaptain(String viceCaptain) {
+	public void setViceCaptain(boolean viceCaptain) {
 		this.viceCaptain = viceCaptain;
 	}
 	/**

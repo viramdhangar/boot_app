@@ -40,4 +40,6 @@ public interface IMatchDao {
 	MatchesDTO getMatch(String matchId);
 	AccountDTO account(String userName);
 	AccountDTO addBalance(AccountDTO account);
+	MatchTeam getTeam(String teamId);
+	LeagueDTO getLeague(String leagueId);
 }

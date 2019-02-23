@@ -2,10 +2,12 @@ package com.waio.service.impl;
 
 import java.math.BigInteger;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -41,18 +43,33 @@ public class MatchService implements IMatchService{
 	
 	@Override
 	@Cacheable(value = "matches")
-	public List<MatchesDTO> getMatches() {
+	public List<MatchesDTO> getMatches() throws Exception {
 		List<MatchesDTO> matchesList = matchDao.getMatches();
 		SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy");  
-		for(MatchesDTO matches : matchesList) {
-			matches.setTeam1Short(DataUtils.getShortForm(matches.getTeam1()));
-			matches.setTeam2Short(DataUtils.getShortForm(matches.getTeam2()));
-			matches.setFormattedTeamName(matches.getTeam1Short()+"  vs  "+matches.getTeam2Short());
-			matches.setTeam1Name(matches.getTeam1());
-			matches.setTeam2Name(matches.getTeam2());
-			DataUtils.getMatchTypeShort(matches);  
-		    String strDate= formatter.format(matches.getDatetime());  
-		    matches.setDateShow(strDate);
+		Date today = new Date();
+		SimpleDateFormat formatterrr = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");  
+		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+		
+		Iterator<MatchesDTO> it = matchesList.iterator();
+		while(it.hasNext()) {
+			MatchesDTO matches = it.next();
+			String strrDate= formatterrr.format(matches.getDatetime());  
+			Date matchDate = format.parse(strrDate);
+			String strToday= formatterrr.format(today);  
+			Date todayDate = format.parse(strToday);
+			
+			if(matchDate.before(todayDate)) {
+				it.remove();
+			}else {
+				matches.setTeam1Short(DataUtils.getShortForm( matches.getTeam1()));
+				matches.setTeam2Short(DataUtils.getShortForm(matches.getTeam2()));
+				matches.setFormattedTeamName(matches.getTeam1Short()+"  vs  "+matches.getTeam2Short());
+				matches.setTeam1Name(matches.getTeam1());
+				matches.setTeam2Name(matches.getTeam2());
+				DataUtils.getMatchTypeShort(matches);  
+			    String strDate= formatter.format(matches.getDatetime());  
+			    matches.setDateShow(strDate);
+			}
 		}
 		LOG.info("Getting matches list.");
 		return matchesList;
@@ -94,7 +111,7 @@ public class MatchService implements IMatchService{
 			// 2. insert team again with new players
 			int insertedPlayers = matchDao.createTeam(team);
 			if (insertedPlayers > 0) {
-				result = "Team updated successfully.";
+				result = team.getId();
 			}
 		} else {
 			// create new team
@@ -105,7 +122,7 @@ public class MatchService implements IMatchService{
 			// 3. insert new team
 			int insertedPlayers = matchDao.createTeam(team);
 			if (insertedPlayers > 0) {
-				result = "Team created successfully. Please join league now.";
+				result = team.getId();
 			}
 		}
 		return result;
@@ -143,8 +160,7 @@ public class MatchService implements IMatchService{
 			if(StringUtils.isEmpty(teamName)) {
 				team1.add(player);
 				teamName = player.getPlayingTeamName();
-			}
-			if(player.getPlayingTeamName().equalsIgnoreCase(teamName)) {
+			}else if(player.getPlayingTeamName().equalsIgnoreCase(teamName)) {
 				team1.add(player);
 			} else {
 				team2.add(player);
@@ -204,8 +220,8 @@ public class MatchService implements IMatchService{
 			playerDTO.setPlayingRole(matchBean.getPlayingRole());
 			playerDTO.setImageURL(matchBean.getImageURL());
 			playerDTO.setCountry(matchBean.getCountry());
-			playerDTO.setCaptain(matchBean.getCaptain());
-			playerDTO.setViceCaptain(matchBean.getViceCaptain());
+			playerDTO.setCaptain(Boolean.parseBoolean(matchBean.getCaptain()));
+			playerDTO.setViceCaptain(Boolean.parseBoolean(matchBean.getViceCaptain()));
 			playerDTO.setPlayingTeamName(matchBean.getPlayingTeamName());
 			players.add(playerDTO);
 		}
@@ -299,11 +315,19 @@ public class MatchService implements IMatchService{
 				
 				if(matchDate.after(todayDate)) {
 					matchLeagueObject.setMatchStatus("UPCOMING");
-				}else if(matchDate.before(todayDate) && matchLeague.getMatchStarted().equalsIgnoreCase("true") && (StringUtils.isEmpty(matchLeague.getWinner_team()) || matchLeague.getMatchStatus().equalsIgnoreCase("LIVE"))) {
+				}else if(matchDate.before(todayDate) && StringUtils.isNotEmpty(matchLeague.getWinner_team())) {
+					matchLeagueObject.setMatchStatus("COMPLETED");
+				}else if(matchDate.before(todayDate) && (matchLeague.getMatchStarted().equalsIgnoreCase("true") || StringUtils.isEmpty(matchLeague.getWinner_team()) || matchLeague.getMatchStatus().equalsIgnoreCase("LIVE"))) {
+					matchLeagueObject.setMatchStatus("LIVE");
+				}
+				
+				/*if(matchDate.after(todayDate)) {
+					matchLeagueObject.setMatchStatus("UPCOMING");
+				}else if(matchDate.before(todayDate) && (matchLeague.getMatchStarted().equalsIgnoreCase("true") || StringUtils.isEmpty(matchLeague.getWinner_team()) || matchLeague.getMatchStatus().equalsIgnoreCase("LIVE"))) {
 					matchLeagueObject.setMatchStatus("LIVE");
 				}else if(matchDate.before(todayDate) && StringUtils.isNotEmpty(matchLeague.getWinner_team())) {
 					matchLeagueObject.setMatchStatus("COMPLETED");
-				}
+				}*/
 				
 				matchLeagueObject.setMatch(setMatchObject(matchLeague));
 				leagueList.add(setLeagueObject(matchLeague));
@@ -387,6 +411,16 @@ public class MatchService implements IMatchService{
 	public AccountDTO addBalance(AccountDTO account) {
 		account.setStatus("Credit");
 		return matchDao.addBalance(account);
+	}
+
+	@Override
+	public MatchTeam getTeam(String teamId) {
+		return matchDao.getTeam(teamId);
+	}
+
+	@Override
+	public LeagueDTO getLeague(String leagueId) {
+		return matchDao.getLeague(leagueId);
 	}
 
 
