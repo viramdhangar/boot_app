@@ -207,6 +207,49 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 		Map<String, Object> simpleJdbcCallResult = simpleJdbcCall.execute(in);
 
 		if (simpleJdbcCallResult.get("result").toString().equalsIgnoreCase("SUCCESS")) {
+			
+			// deduct entry fee amount from wallet
+			AccountDTO accountDTO = account(team.getUniqueNumber());
+			LeagueDTO leagueDTO = getLeague(leagueId);
+			BigDecimal entryFee = BigDecimal.valueOf(leagueDTO.getEntryFee());
+			BigDecimal hundred = BigDecimal.valueOf(100);
+			BigDecimal ten = BigDecimal.valueOf(10);
+			BigDecimal tenPercentOfJoining =  (entryFee.divide(hundred)).multiply(ten);
+			BigDecimal remainingBonus = null;
+			if(accountDTO.getBonusAmount()!=null) {
+				if(accountDTO.getBonusAmount().compareTo(tenPercentOfJoining) >= 0 ) {
+					remainingBonus = accountDTO.getBonusAmount().subtract(tenPercentOfJoining);
+				}else {
+					tenPercentOfJoining = accountDTO.getBonusAmount();
+					remainingBonus = null;
+				}
+			}else {
+				tenPercentOfJoining = null;
+			}
+			accountDTO.setBonusAmount(remainingBonus);
+			// deduct tenPerFrom deposited
+			BigDecimal totalAmountTodeduct = entryFee; 
+			if(tenPercentOfJoining != null) {
+				totalAmountTodeduct = totalAmountTodeduct.subtract(tenPercentOfJoining);
+				if(accountDTO.getDepositedAmount().compareTo(totalAmountTodeduct) >= 0) {
+					accountDTO.setDepositedAmount(accountDTO.getDepositedAmount().subtract(totalAmountTodeduct));									
+				}else {
+					// deposited is less
+					return "Balance is not sufficiant to join this group";
+				}
+			}else {
+				if(accountDTO.getDepositedAmount().compareTo(entryFee) >= 0) {
+					accountDTO.setDepositedAmount(accountDTO.getDepositedAmount().subtract(entryFee));									
+				} else {
+					// deposited is less
+					return "Balance is not sufficiant to join this group";	
+				}
+			}
+			
+			// update account wallet
+			accountDTO.setStatus("Debit");
+			addBalance(accountDTO, true);
+			
 			return "League joined successfully, please join other league now.";
 		} else {
 			return "League is full, please join other league now.";
@@ -280,19 +323,18 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 	}
 	
 	@Override
-	public AccountDTO addBalance(AccountDTO account) {
+	public AccountDTO addBalance(AccountDTO account, boolean debit) {
 		// add transaction
 		AccountDTO acc = new AccountDTO();
 		
 		AccountDTO existing  = account(account.getUsername());
-		if(existing!=null) {
+		if(existing!=null && debit==false) {
 			if(existing.getDepositedAmount()!=null ) {
 				account.setDepositedAmount(account.getDepositedAmount().add(existing.getDepositedAmount()));
 			}
 			if(existing.getBonusAmount()!=null ) {
 				account.setBonusAmount(account.getBonusAmount().add(existing.getBonusAmount()));
-			}
-			
+			}	
 		}
 		try {
 			if (addTransaction(account) > 0) {

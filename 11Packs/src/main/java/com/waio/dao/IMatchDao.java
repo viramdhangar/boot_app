@@ -39,7 +39,7 @@ public interface IMatchDao {
 	int validateSmallOrGrand(String leagueId, String matchId, String createdId);
 	MatchesDTO getMatch(String matchId);
 	AccountDTO account(String userName);
-	AccountDTO addBalance(AccountDTO account);
+	AccountDTO addBalance(AccountDTO account, boolean debit);
 	MatchTeam getTeam(String teamId);
 	LeagueDTO getLeague(String leagueId);
 }

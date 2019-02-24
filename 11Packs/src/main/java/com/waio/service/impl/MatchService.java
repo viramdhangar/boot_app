@@ -216,7 +216,7 @@ public class MatchService implements IMatchService{
 		for(MatchTeamBean matchBean : team) {
 			PlayerDTO playerDTO = new PlayerDTO();
 			playerDTO.setPid(matchBean.getPid());
-			playerDTO.setName(matchBean.getName());
+			playersShortName(matchBean, playerDTO);
 			playerDTO.setPlayingRole(matchBean.getPlayingRole());
 			playerDTO.setImageURL(matchBean.getImageURL());
 			playerDTO.setCountry(matchBean.getCountry());
@@ -233,6 +233,27 @@ public class MatchService implements IMatchService{
 		matchTeam.setUniqueNumber(uniqueNumber);
 		matchTeam.setPlayers(players);
 		return matchTeam;
+	}
+
+	/**
+	 * @param matchBean
+	 * @param playerDTO
+	 */
+	private void playersShortName(MatchTeamBean matchBean, PlayerDTO playerDTO) {
+		String[] str = matchBean.getName().split(" ");
+		int totalWords = str.length;
+		if(totalWords > 1) {
+			String firstWord = str[0].substring(0, 1);
+			if(totalWords == 2) {
+				playerDTO.setName(firstWord+". "+str[1]);						
+			}else if (totalWords >= 3) {
+				playerDTO.setName(firstWord+". "+str[1].substring(0, 1)+". "+str[2]);
+			}else {
+				playerDTO.setName(matchBean.getName());
+			}
+		} else {
+			playerDTO.setName(matchBean.getName());
+		}
 	}
 
 	@Override
@@ -410,7 +431,7 @@ public class MatchService implements IMatchService{
 	@Override
 	public AccountDTO addBalance(AccountDTO account) {
 		account.setStatus("Credit");
-		return matchDao.addBalance(account);
+		return matchDao.addBalance(account, false);
 	}
 
 	@Override
