@@ -1,6 +1,7 @@
 package com.waio.dao;
 
 import java.math.BigInteger;
+import java.util.Date;
 import java.util.List;
 
 import com.waio.cricapi.MatchesDTO;
@@ -17,6 +18,7 @@ import com.waio.model.WinningBreakupDTO;
 public interface IMatchDao {
 
 	public List<MatchesDTO> getMatches();
+	public List<MatchesDTO> getActiveMatches();
 	public List<LeagueDTO> getLeagues(String matchId);
 	public List<PlayerDTO> getSquad(String matchId);
 	int createTeam(MatchTeam team);
@@ -35,7 +37,7 @@ public interface IMatchDao {
 	int switchTeam(MatchTeam matchTeam, String leagueId, String teamIdOld);
 	List<MatchTeam> getJoinedLeagueAllTeams(String matchId, String leagueId);
 	List<TeamRankPoints> getTeamsRankAndPoints(String uniqueNumber, String matchId, String leagueId);
-	List<MatchTeamBean> getTeamDetailsWithPoints(String teamId);
+	List<MatchTeamBean> getTeamDetailsWithPoints(String matchId, String teamId);
 	int validateSmallOrGrand(String leagueId, String matchId, String createdId);
 	MatchesDTO getMatch(String matchId);
 	AccountDTO account(String userName);

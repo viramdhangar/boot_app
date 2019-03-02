@@ -24,20 +24,21 @@ public class MatchTeamBean {
     private String born;
     private String battingStyle;
     private String bowlingStyle;
-    private String captain;
-    private String viceCaptain;
+    private boolean captain;
+    private boolean viceCaptain;
     private String playingTeamName;
-    private double points;
+    private String points;
+	
 	/**
 	 * @return the points
 	 */
-	public double getPoints() {
+	public String getPoints() {
 		return points;
 	}
 	/**
 	 * @param points the points to set
 	 */
-	public void setPoints(double points) {
+	public void setPoints(String points) {
 		this.points = points;
 	}
 	/**
@@ -52,28 +53,29 @@ public class MatchTeamBean {
 	public void setPlayingTeamName(String playingTeamName) {
 		this.playingTeamName = playingTeamName;
 	}
+
 	/**
 	 * @return the captain
 	 */
-	public String getCaptain() {
+	public boolean isCaptain() {
 		return captain;
 	}
 	/**
 	 * @param captain the captain to set
 	 */
-	public void setCaptain(String captain) {
+	public void setCaptain(boolean captain) {
 		this.captain = captain;
 	}
 	/**
 	 * @return the viceCaptain
 	 */
-	public String getViceCaptain() {
+	public boolean isViceCaptain() {
 		return viceCaptain;
 	}
 	/**
 	 * @param viceCaptain the viceCaptain to set
 	 */
-	public void setViceCaptain(String viceCaptain) {
+	public void setViceCaptain(boolean viceCaptain) {
 		this.viceCaptain = viceCaptain;
 	}
 	/**

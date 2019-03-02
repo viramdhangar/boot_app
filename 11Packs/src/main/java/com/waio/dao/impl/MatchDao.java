@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Repository;
 import com.waio.cricapi.MatchesDTO;
 import com.waio.dao.IMatchDao;
 import com.waio.model.AccountDTO;
-import com.waio.model.JoinLeague;
 import com.waio.model.LeagueDTO;
 import com.waio.model.MatchLeaguesBean;
 import com.waio.model.MatchTeam;
@@ -41,12 +41,22 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 
 	@Override
 	public List<MatchesDTO> getMatches() {
-		String sql = "SELECT unique_id, DATE_FORMAT(datetime, '%Y-%m-%d') date, DATE_FORMAT(datetime,'%H:%i:%s') time, team1, datetime, team2, type, squad, toss_winner_team, winner_team, matchStarted, is_active FROM MATCHES where datetime>current_date() and date<=(current_date()+2) and matchStarted='false' order by datetime asc";
+		String sql = "SELECT unique_id, DATE_FORMAT(datetime, '%Y-%m-%d') date, DATE_FORMAT(datetime,'%H:%i:%s') time, team1, datetime, team2, type, squad, toss_winner_team, winner_team, matchStarted, is_active FROM MATCHES where datetime > current_date() and date<=(current_date()+2) order by datetime asc";
 		// AND MATCH_START_TIME>=CURRENT_TIME
 		List<MatchesDTO> matches = getJdbcTemplate().query(sql, new Object[] {},
 				new BeanPropertyRowMapper<MatchesDTO>(MatchesDTO.class));
 		return matches;
 	}
+	
+//	@Override
+	public List<MatchesDTO> getActiveMatches() {
+		String sql = "SELECT unique_id, date, DATE_FORMAT(datetime,'%H:%i:%s') time, team1, datetime, team2, type, squad, toss_winner_team, winner_team, matchStarted, is_active FROM MATCHES where datetime < current_timestamp() and is_active='Y' and winner_team is null order by datetime desc";
+		// AND MATCH_START_TIME>=CURRENT_TIME
+		List<MatchesDTO> matches = getJdbcTemplate().query(sql, new Object[] { },
+				new BeanPropertyRowMapper<MatchesDTO>(MatchesDTO.class));
+		return matches;
+	}
+	
 	@Override
 	public MatchesDTO getMatch(String matchId) {
 		String sql = "SELECT unique_id, DATE_FORMAT(datetime, '%Y-%m-%d') date, DATE_FORMAT(datetime,'%H:%i:%s') time, team1, datetime, team2, type, squad, toss_winner_team, winner_team, matchStarted, is_active FROM MATCHES where unique_id=?";
@@ -78,7 +88,7 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 	
 	@Override
 	public List<LeagueDTO> getJoinedLeagues(String uniqueNumber, String matchId) {
-		String sql = "select distinct ml.id, league.league, league.size, league.entry_fee, league.winning_amount, league.winners, ml.joined_team, ml.status  from league_teams lt, match_leagues ml, league where lt.league_id = ml.id and ml.league_id= league.id and lt.match_id = ml.match_id and lt.created_id = ? and lt.match_id=?";
+		String sql = "select distinct ml.id, league.league, league.size, league.entry_fee, league.winning_amount, league.winners, ml.joined_team, ml.status, ml.league_id breakupId  from league_teams lt, match_leagues ml, league where lt.league_id = ml.id and ml.league_id= league.id and lt.match_id = ml.match_id and lt.created_id = ? and lt.match_id=?";
 		List<LeagueDTO> leagues = getJdbcTemplate().query(sql, new Object[] { uniqueNumber, matchId },
 				new BeanPropertyRowMapper<LeagueDTO>(LeagueDTO.class));
 		return leagues;
@@ -86,7 +96,7 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 	
 	@Override
 	public List<MatchLeaguesBean> getJoinedMatchLeagues(String uniqueNumber) {
-		String sql = "select matches.unique_id, matches.team1, matches.team2, matches.datetime, DATE_FORMAT(datetime,'%H:%i:%s') time, matches.matchStarted, matches.match_status, matches.is_active, matches.type, ml.id, league.league, league.size, league.entry_fee, league.winning_amount, league.winners, ml.joined_team, ml.status, ml.league_id breakupId, matches.winner_team from league_teams lt, match_leagues ml, league, matches where lt.league_id = ml.id and ml.league_id= league.id and lt.match_id = ml.match_id and ml.match_id = matches.unique_id and lt.created_id = ? and matches.is_active='Y' order by matches.unique_id";
+		String sql = "select matches.unique_id, matches.team1, matches.team2, matches.datetime, DATE_FORMAT(datetime,'%H:%i:%s') time, matches.matchStarted, matches.match_status, matches.is_active, matches.type, ml.id, league.league, league.size, league.entry_fee, league.winning_amount, league.winners, ml.joined_team, ml.status, ml.league_id breakupId, matches.winner_team from league_teams lt, match_leagues ml, league, matches where lt.league_id = ml.id and ml.league_id= league.id and lt.match_id = ml.match_id and ml.match_id = matches.unique_id and lt.created_id = ? and matches.is_active='Y' order by matches.datetime asc";
 		List<MatchLeaguesBean> matchLeagues = getJdbcTemplate().query(sql, new Object[] { uniqueNumber },
 				new BeanPropertyRowMapper<MatchLeaguesBean>(MatchLeaguesBean.class));
 		return matchLeagues;
@@ -299,9 +309,9 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 	}
 	
 	@Override
-	public List<MatchTeamBean> getTeamDetailsWithPoints(String teamId){	
-		String sql = "select player.pid, player.name, player.playingRole, player.imageURL, team.id, team.name teamName, team.created_id uniqueNumber, player_points.points from team, team_player, player_points, player where team.id = team_player.team_id and team_player.team_id = ? and team_player.player_id = player_points.player_id and player_points.Match_id=team.match_id and team_player.player_id = player.pid";
-		List<MatchTeamBean> teamDetailWithPoints = getJdbcTemplate().query(sql, new Object[] { teamId },
+	public List<MatchTeamBean> getTeamDetailsWithPoints(String matchId, String teamId){	
+		String sql = "select player.pid, player.name, player.playingRole, player.imageURL, team.id, team.name teamName, team.created_id uniqueNumber, player_points.points, team_player.captain, team_player.vice_captain from team, player, team_player left join player_points ON  team_player.player_id = player_points.player_id and player_points.match_id = ? where team.id = team_player.team_id and team_player.team_id = ? and team_player.player_id = player.pid";
+		List<MatchTeamBean> teamDetailWithPoints = getJdbcTemplate().query(sql, new Object[] { matchId, teamId },
 				new BeanPropertyRowMapper<MatchTeamBean>(MatchTeamBean.class));
 		return teamDetailWithPoints;	
 	}

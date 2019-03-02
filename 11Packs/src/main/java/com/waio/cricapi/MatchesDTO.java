@@ -35,7 +35,71 @@ public class MatchesDTO {
 	private String team1Url;
 	private String team2Url;
 	private String matchStatus;
-	
+	private int days;
+	private int hours;
+	private int minutes;
+	private int seconds;
+	private boolean liveFlag;
+	/**
+	 * @return the liveFlag
+	 */
+	public boolean isLiveFlag() {
+		return liveFlag;
+	}
+	/**
+	 * @param liveFlag the liveFlag to set
+	 */
+	public void setLiveFlag(boolean liveFlag) {
+		this.liveFlag = liveFlag;
+	}
+	/**
+	 * @return the days
+	 */
+	public int getDays() {
+		return days;
+	}
+	/**
+	 * @param days the days to set
+	 */
+	public void setDays(int days) {
+		this.days = days;
+	}
+	/**
+	 * @return the hours
+	 */
+	public int getHours() {
+		return hours;
+	}
+	/**
+	 * @param hours the hours to set
+	 */
+	public void setHours(int hours) {
+		this.hours = hours;
+	}
+	/**
+	 * @return the minutes
+	 */
+	public int getMinutes() {
+		return minutes;
+	}
+	/**
+	 * @param minutes the minutes to set
+	 */
+	public void setMinutes(int minutes) {
+		this.minutes = minutes;
+	}
+	/**
+	 * @return the seconds
+	 */
+	public int getSeconds() {
+		return seconds;
+	}
+	/**
+	 * @param seconds the seconds to set
+	 */
+	public void setSeconds(int seconds) {
+		this.seconds = seconds;
+	}
 	/**
 	 * @return the matchStatus
 	 */

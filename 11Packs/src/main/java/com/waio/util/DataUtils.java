@@ -3,6 +3,12 @@
  */
 package com.waio.util;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
@@ -80,5 +86,20 @@ public class DataUtils {
 		HttpSession session = req.getSession();
 		UserDTO user = (UserDTO) session.getAttribute("user");
 		return user;
+	}
+	
+	public static Date getCurrentDateTime() {
+		Date today = new Date();
+		SimpleDateFormat istTimeFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+		TimeZone istTime = TimeZone.getTimeZone("IST");
+		istTimeFormat.setTimeZone(istTime);
+		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+		try {
+			return format.parse(istTimeFormat.format(today));
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
 	}
 }

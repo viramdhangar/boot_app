@@ -56,7 +56,7 @@ public class MatchController {
 	}
 	
 	@GetMapping("/v1/match/{matchId}")
-	public MatchesDTO getMatch(@PathVariable String matchId) throws ResourceNotFoundException {
+	public MatchesDTO getMatch(@PathVariable String matchId) throws Exception {
 		return matchService.getMatch(matchId);
 	}
 
@@ -224,9 +224,9 @@ public class MatchController {
 		return rankPoints;
 	}
 	
-	@GetMapping(value = "/v1/teamDetailWithPoints/{teamId}")
-	public List<MatchTeamBean> getTeamsRankAndPoints(@PathVariable String teamId) {
-		List<MatchTeamBean> teamDetailWithPoints = matchService.getTeamDetailsWithPoints(teamId);
+	@GetMapping(value = "/v1/teamDetailWithPoints/{matchId}/{teamId}")
+	public List<MatchTeamBean> getTeamsRankAndPoints(@PathVariable String matchId, @PathVariable String teamId) {
+		List<MatchTeamBean> teamDetailWithPoints = matchService.getTeamDetailsWithPoints(matchId, teamId);
 		return teamDetailWithPoints;
 	}
 	

@@ -1,5 +1,6 @@
 package com.waio.service;
 
+import java.util.Date;
 import java.util.List;
 
 import com.waio.cricapi.MatchesDTO;
@@ -16,6 +17,7 @@ import com.waio.model.WinningBreakupDTO;
 public interface IMatchService {
 
 	public List<MatchesDTO> getMatches() throws Exception;
+	public List<MatchesDTO> getActiveMatches();
 	public List<LeagueDTO> getLeagues(String matchId);
 	public List<PlayerDTO> getSquad(String matchId);
 	public String createTeam(MatchTeam team);
@@ -33,9 +35,9 @@ public interface IMatchService {
 	String switchTeam(MatchTeam matchTeam, String leagueId, String teamIdOld);
 	List<MatchTeam> getJoinedLeagueAllTeams(String matchId, String leagueId);
 	List<TeamRankPoints> getTeamsRankAndPoints(String uniqueNumber, String matchId, String leagueId);
-	List<MatchTeamBean> getTeamDetailsWithPoints(String teamId);
+	List<MatchTeamBean> getTeamDetailsWithPoints(String matchId, String teamId);
 	int validateSmallOrGrand(String leagueId, String matchId, String createdId);
-	MatchesDTO getMatch(String matchId);
+	MatchesDTO getMatch(String matchId) throws Exception;
 	AccountDTO account(String userName);
 	AccountDTO addBalance(AccountDTO account);
 	MatchTeam getTeam(String teamId);

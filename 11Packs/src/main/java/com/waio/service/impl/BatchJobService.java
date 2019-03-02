@@ -4,7 +4,6 @@
 package com.waio.service.impl;
 
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,6 +11,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
+import java.util.logging.Logger;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.Transformer;
@@ -37,7 +38,10 @@ import com.waio.model.PlayerPointsDTO;
 import com.waio.model.PlayerScoreBean;
 import com.waio.service.IBatchJobService;
 import com.waio.service.ICricApiService;
+import com.waio.util.AppConstants;
 import com.waio.util.DataUtils;
+
+import io.jsonwebtoken.lang.Collections;
 
 /**
  * @author Viramm
@@ -46,6 +50,8 @@ import com.waio.util.DataUtils;
 @Service("BatchJobService")
 public class BatchJobService implements IBatchJobService{
 
+	private static final Logger LOGGER = Logger.getLogger( BatchJobService.class.getName());
+	
 	@Autowired
 	private ICricApiService cricApiService;
 	
@@ -55,34 +61,46 @@ public class BatchJobService implements IBatchJobService{
 	@Override //@Autowired
 	public NewMatchesData insertNewMatches() throws Exception {
 		
-		NewMatchesData newMatchesData = cricApiService.newMatches();
+		NewMatchesData newMatchesData = cricApiService.newMatches(AppConstants.CRIC_API_KEY1);
+		if(Collections.isEmpty(newMatchesData.getMatches())) {
+			System.out.println("First API_key is returning empty, trying another");
+			newMatchesData = cricApiService.newMatches(AppConstants.CRIC_API_KEY2);
+			if(Collections.isEmpty(newMatchesData.getMatches())) {
+				System.out.println("Second API_key also returns empty");
+				return null;
+			}
+		}
 		List<MatchesDTO> matchesList = newMatchesData.getMatches();
-		SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
-		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+		SimpleDateFormat istTimeFormat = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+		TimeZone istTime = TimeZone.getTimeZone("IST");
+		istTimeFormat.setTimeZone(istTime);
+		//DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
 		
 		Date today = new Date();	
-		long ltime=today.getTime()+2*24*60*60*1000;
+		long ltime=today.getTime()+3*24*60*60*1000;
 		long oneDay=today.getTime()-1*24*60*60*1000;
-		Date plusTwoDays=new Date(ltime);
+		Date plusThreeDays=new Date(ltime);
 		Date minusOneDay=new Date(oneDay);
 		
 		Iterator<MatchesDTO> it = matchesList.iterator();
 		while(it.hasNext()) {
 			MatchesDTO matches = it.next();
 			
-			String strDate= formatter.format(matches.getDatetime());  
-			Date matchDate = format.parse(strDate);
 			
-			String strToday= formatter.format(today);  
-			Date todayDate = format.parse(strToday);
-			if(StringUtils.isNotEmpty(matches.getWinner_team()) || StringUtils.isNotBlank(matches.getWinner_team())) {
+			//Date matchDate = matches.getDatetime(); // format.parse(istTimeFormat.format(matches.getDatetime()));
+			//matches.setDatetime(matchDate);
+						
+			//Date todayDate = format.parse(istTimeFormat.format(today));
+			
+			/*if(StringUtils.isNotEmpty(matches.getWinner_team()) || StringUtils.isNotBlank(matches.getWinner_team())) {
 				matches.setMatchStatus("COMPLETED");
-			}else if ((StringUtils.isEmpty(matches.getWinner_team()) || StringUtils.isBlank(matches.getWinner_team())) && matchDate.after(todayDate)) {
+			}else if ((StringUtils.isEmpty(matches.getWinner_team()) || StringUtils.isBlank(matches.getWinner_team())) && matches.getDatetime().after(todayDate)) {
 				matches.setMatchStatus("UPCOMING");
 			}else {
 				matches.setMatchStatus("LIVE");
-			}
-			if((matches.getDatetime().equals(minusOneDay) || matches.getDatetime().after(minusOneDay)) && matches.getDatetime().before(plusTwoDays)) {
+			}*/
+			
+			if((matches.getDatetime().equals(minusOneDay) || matches.getDatetime().after(minusOneDay)) && matches.getDatetime().before(plusThreeDays)) {
 				if(StringUtils.isEmpty(matches.getUnique_id()) || StringUtils.isEmpty(matches.getType()) || StringUtils.isEmpty(matches.getTeam1()) || StringUtils.isEmpty(matches.getTeam2()) || matches.getDatetime()==null) {
 					it.remove();
 				}
@@ -94,10 +112,6 @@ public class BatchJobService implements IBatchJobService{
 		if(batchJobDao.insertMatches(matchesList)>0) {
 			// set leagues bean for all matches
 			for(MatchesDTO matches : matchesList) {
-				if(matches.getSquad().equalsIgnoreCase("false")) {
-					System.out.println("Squad not present := "+matches.getUnique_id());
-					continue;
-				}
 				insertSquad(matches);
 			}
 			
@@ -110,14 +124,101 @@ public class BatchJobService implements IBatchJobService{
 		}
 	}
 
+	public NewMatchesData updateMatchesStatus() throws Exception {
+		
+		NewMatchesData newMatchesData = cricApiService.newMatches(AppConstants.CRIC_API_KEY1);
+		if(Collections.isEmpty(newMatchesData.getMatches())) {
+			System.out.println("First API_key is returning empty, trying another");
+			newMatchesData = cricApiService.newMatches(AppConstants.CRIC_API_KEY2);
+			if(Collections.isEmpty(newMatchesData.getMatches())) {
+				System.out.println("Second API_key also returns empty");
+				return null;
+			}
+		}
+		
+		List<MatchesDTO> matchesList = newMatchesData.getMatches();
+		
+		Date today = new Date();	
+		long ltime=today.getTime()+3*24*60*60*1000;
+		long oneDay=today.getTime()-3*24*60*60*1000;
+		Date plusThreeDays=new Date(ltime);
+		Date minusOneDay=new Date(oneDay);
+		
+		SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");  
+		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+		String strToday= formatter.format(today);  
+		Date todayDate = format.parse(strToday);
+		
+		if(Collections.isEmpty(matchesList)) {
+			return newMatchesData;
+		}
+		
+		Iterator<MatchesDTO> it = matchesList.iterator();
+		while(it.hasNext()) {
+		
+			MatchesDTO matches = it.next();
+			if(StringUtils.isNotEmpty(matches.getWinner_team()) || StringUtils.isNotBlank(matches.getWinner_team())) {
+				matches.setMatchStatus("COMPLETED");
+			}else if ((StringUtils.isEmpty(matches.getWinner_team()) || StringUtils.isBlank(matches.getWinner_team())) && matches.getDatetime().after(todayDate)) {
+				matches.setMatchStatus("UPCOMING");
+			}else {
+				matches.setMatchStatus("LIVE");
+			}
+
+			if((matches.getDatetime().equals(minusOneDay) || matches.getDatetime().after(minusOneDay)) && matches.getDatetime().before(plusThreeDays)) {
+				if(StringUtils.isEmpty(matches.getUnique_id()) || StringUtils.isEmpty(matches.getType()) || StringUtils.isEmpty(matches.getTeam1()) || StringUtils.isEmpty(matches.getTeam2()) || matches.getDatetime()==null) {
+					it.remove();
+				}
+			}else {
+				it.remove();
+			}
+		}
+				
+		batchJobDao.insertMatches(matchesList);
+		return newMatchesData;
+	}
+
 	public int insertSquad(MatchesDTO matches) {
 		try {
-		TeamSquad teamSquad = cricApiService.getSquad(matches.getUnique_id());
-		List<PlayerDTO> playerList = insertPlayerInfo(teamSquad, matches);
+		TeamSquad teamSquad = cricApiService.getSquad(matches.getUnique_id(), AppConstants.CRIC_API_KEY1);
+		if(teamSquad == null) {
+			System.out.println("First API_key is returning empty, trying another");
+			teamSquad = cricApiService.getSquad(matches.getUnique_id(), AppConstants.CRIC_API_KEY2);
+			if(teamSquad == null) {
+				System.out.println("Second API_key also returns empty");
+				return 0;
+			}
+		}
+		
+		List<Team> squad = teamSquad.getSquad();
+		if(Collections.isEmpty(squad)) {
+			System.out.println("Squad not present in squad api checking in summary := "+matches.getUnique_id());
+			FantacySummaryApi apiData = cricApiService.fantacySummaryApi(matches.getUnique_id(), AppConstants.CRIC_API_KEY1);
+			
+			// checking data with multiple API_Key
+			if(null == apiData) {
+				System.out.println("First API_key is returning empty, trying another");
+				apiData = cricApiService.fantacySummaryApi(matches.getUnique_id(), AppConstants.CRIC_API_KEY2);
+				if(null == apiData) {
+					System.out.println("Second API_key also returns empty");
+					return 0;
+				}
+			}
+			squad = apiData.getData().getTeam();
+			
+			if(Collections.isEmpty(squad)) {
+				System.out.println("Squad not present in summary api too:= "+matches.getUnique_id());
+				return 0;
+			}
+			System.out.println("Squad found in summary API:= "+matches.getUnique_id());
+		}
+		
+		List<PlayerDTO> playerList = insertPlayerInfo(squad, matches);
 		// insert player information
 		batchJobDao.insertPlayerInfo(playerList);
 		// insert match squad
 		int insertedRecords = batchJobDao.insertSquad(matches.getUnique_id(), playerList);
+		System.out.println("Squad added for match "+matches.getUnique_id()+" added "+insertedRecords+" players");
 		return insertedRecords;
 		}catch(Exception e) {
 			System.out.println(e);
@@ -129,11 +230,20 @@ public class BatchJobService implements IBatchJobService{
 		return batchJobDao.insertLeagues(matchesList);
 	}
 	
-	public List<PlayerDTO> insertPlayerInfo(TeamSquad teamSquad, MatchesDTO matches) {
+	public List<PlayerDTO> insertPlayerInfo(List<Team> squad, MatchesDTO matches) {
 		List<PlayerDTO> playerList = new ArrayList<PlayerDTO>();
-		for(Team team : teamSquad.getSquad()) {
+		for(Team team : squad) {
 			for(PlayerDTO player : team.getPlayers()) {
-				PlayerDTO playerDTO = cricApiService.playerInfo(player.getPid());	
+				PlayerDTO playerDTO = cricApiService.playerInfo(player.getPid(), AppConstants.CRIC_API_KEY1);
+				if(null == playerDTO) {
+					System.out.println("First API_key is returning empty, trying another");
+					playerDTO = cricApiService.playerInfo(player.getPid(), AppConstants.CRIC_API_KEY2);
+					if(null == playerDTO) {
+						System.out.println("Second API_key also returns empty");
+						return null;
+					}
+				}
+
 				if(playerDTO!=null) {
 					playerDTO.setPlayingTeamName(DataUtils.getShortForm(team.getName()));
 					if(playerDTO.getPlayingRole()!=null && playerDTO.getPlayingRole().contains("Bowler")){
@@ -190,7 +300,16 @@ public class BatchJobService implements IBatchJobService{
 	@Override //@Autowired
 	public String fantasySummaryApi(String matchId) {
 
-		FantacySummaryApi apiData = cricApiService.fantacySummaryApi(matchId);
+		FantacySummaryApi apiData = cricApiService.fantacySummaryApi(matchId, AppConstants.CRIC_API_KEY1);
+		if(null == apiData) {
+			System.out.println("First API_key is returning empty, trying another");
+			apiData = cricApiService.fantacySummaryApi(matchId, AppConstants.CRIC_API_KEY2);
+			if(null == apiData) {
+				System.out.println("Second API_key also returns empty");
+				return null;
+			}
+		}
+		
 		// update playing 11 if declared
 		List<PlayerDTO> playerList = checkUpdatePlaying11(apiData, matchId);
 		
@@ -201,6 +320,11 @@ public class BatchJobService implements IBatchJobService{
 		PlayerScoreBean playerScoreBattingBean = null;
 		PlayerScoreBean playerScoreBowlingBean = null;
 		PlayerScoreBean playerScoreFieldingBean = null;
+		
+		if(apiData.getData() == null) {
+			LOGGER.info("team api data not available in summary api");
+			return "summary data not present";
+		}
 		
 		for (Batting bating : apiData.getData().getBatting()) {
 			for(BattingScore bs : bating.getScores()) {
@@ -254,11 +378,15 @@ public class BatchJobService implements IBatchJobService{
 	
 	public List<PlayerDTO> checkUpdatePlaying11(FantacySummaryApi apiData, String matchId) {
 		List<PlayerDTO> playerList = new ArrayList<>();
-		for (Team team : apiData.getData().getTeam()) {
-			playerList.addAll(team.getPlayers());
-		}
-		if(playerList.size() <= 22) {
-			batchJobDao.playing11Declared(matchId, playerList);
+		if(apiData != null && apiData.getData() != null && apiData.getData().getTeam() != null) {
+			for (Team team : apiData.getData().getTeam()) {
+				playerList.addAll(team.getPlayers());
+			}
+			if(playerList.size() <= 22) {
+				batchJobDao.playing11Declared(matchId, playerList);
+			}			
+		}else {
+			LOGGER.info("team api data not available in summary api");
 		}
 		return playerList;
 	}

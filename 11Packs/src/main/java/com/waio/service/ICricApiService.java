@@ -14,8 +14,8 @@ import com.waio.model.PlayerDTO;
  */
 public interface ICricApiService {
 
-	public NewMatchesData newMatches();
-	public TeamSquad getSquad(String uniqueId);
-	public PlayerDTO playerInfo(String id);
-	public FantacySummaryApi fantacySummaryApi(String id);
+	public NewMatchesData newMatches(String API_KEY);
+	public TeamSquad getSquad(String uniqueId, String API_KEY);
+	public PlayerDTO playerInfo(String id, String API_KEY);
+	public FantacySummaryApi fantacySummaryApi(String id, String API_KEY);
 }

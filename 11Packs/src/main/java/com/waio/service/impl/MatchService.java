@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.Transformer;
@@ -45,10 +46,12 @@ public class MatchService implements IMatchService{
 	@Cacheable(value = "matches")
 	public List<MatchesDTO> getMatches() throws Exception {
 		List<MatchesDTO> matchesList = matchDao.getMatches();
-		SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy");  
+		//SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy");  
 		Date today = new Date();
 		SimpleDateFormat formatterrr = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");  
 		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+		TimeZone istTime = TimeZone.getTimeZone("IST");
+		formatterrr.setTimeZone(istTime);
 		
 		Iterator<MatchesDTO> it = matchesList.iterator();
 		while(it.hasNext()) {
@@ -67,8 +70,8 @@ public class MatchService implements IMatchService{
 				matches.setTeam1Name(matches.getTeam1());
 				matches.setTeam2Name(matches.getTeam2());
 				DataUtils.getMatchTypeShort(matches);  
-			    String strDate= formatter.format(matches.getDatetime());  
-			    matches.setDateShow(strDate);
+			    String strDate= formatterrr.format(matches.getDatetime());  
+			    matches.setDate(format.parse(strDate));
 			}
 		}
 		LOG.info("Getting matches list.");
@@ -76,17 +79,21 @@ public class MatchService implements IMatchService{
 	}
 
 	@Override
-	public MatchesDTO getMatch(String matchId) {
+	public MatchesDTO getMatch(String matchId) throws Exception {
+		SimpleDateFormat formatterrr = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");  
+		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+		TimeZone istTime = TimeZone.getTimeZone("IST");
+		formatterrr.setTimeZone(istTime);
+		
 		MatchesDTO matches = matchDao.getMatch(matchId);
-		SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy");
 		matches.setTeam1Short(DataUtils.getShortForm(matches.getTeam1()));
 		matches.setTeam2Short(DataUtils.getShortForm(matches.getTeam2()));
 		matches.setFormattedTeamName(matches.getTeam1Short() + "  vs  " + matches.getTeam2Short());
 		matches.setTeam1Name(matches.getTeam1());
 		matches.setTeam2Name(matches.getTeam2());
 		DataUtils.getMatchTypeShort(matches);
-		String strDate = formatter.format(matches.getDatetime());
-		matches.setDateShow(strDate);
+	    String strDate= formatterrr.format(matches.getDatetime());  
+	    matches.setDate(format.parse(strDate));
 		LOG.info("Getting matches list.");
 		return matches;
 	}
@@ -220,8 +227,8 @@ public class MatchService implements IMatchService{
 			playerDTO.setPlayingRole(matchBean.getPlayingRole());
 			playerDTO.setImageURL(matchBean.getImageURL());
 			playerDTO.setCountry(matchBean.getCountry());
-			playerDTO.setCaptain(Boolean.parseBoolean(matchBean.getCaptain()));
-			playerDTO.setViceCaptain(Boolean.parseBoolean(matchBean.getViceCaptain()));
+			playerDTO.setCaptain(matchBean.isCaptain());
+			playerDTO.setViceCaptain(matchBean.isViceCaptain());
 			playerDTO.setPlayingTeamName(matchBean.getPlayingTeamName());
 			players.add(playerDTO);
 		}
@@ -338,7 +345,7 @@ public class MatchService implements IMatchService{
 					matchLeagueObject.setMatchStatus("UPCOMING");
 				}else if(matchDate.before(todayDate) && StringUtils.isNotEmpty(matchLeague.getWinner_team())) {
 					matchLeagueObject.setMatchStatus("COMPLETED");
-				}else if(matchDate.before(todayDate) && (matchLeague.getMatchStarted().equalsIgnoreCase("true") || StringUtils.isEmpty(matchLeague.getWinner_team()) || matchLeague.getMatchStatus().equalsIgnoreCase("LIVE"))) {
+				}else if(matchDate.before(todayDate)) {
 					matchLeagueObject.setMatchStatus("LIVE");
 				}
 				
@@ -381,9 +388,14 @@ public class MatchService implements IMatchService{
 
 	/**
 	 * @param matchLeague
+	 * @throws Exception 
 	 */
-	private MatchesDTO setMatchObject(MatchLeaguesBean matchLeague) {
-		SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy");  
+	private MatchesDTO setMatchObject(MatchLeaguesBean matchLeague) throws Exception {
+		SimpleDateFormat formatterrr = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");  
+		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
+		TimeZone istTime = TimeZone.getTimeZone("IST");
+		formatterrr.setTimeZone(istTime);
+		
 		MatchesDTO matcheDTO = new MatchesDTO();
 		matcheDTO.setUnique_id(matchLeague.getUniqueId());
 		matcheDTO.setTeam1(matchLeague.getTeam1());
@@ -396,9 +408,9 @@ public class MatchService implements IMatchService{
 		matcheDTO.setFormattedTeamName(DataUtils.getShortForm(matcheDTO.getTeam1())+"  vs  "+DataUtils.getShortForm(matcheDTO.getTeam2()));
 		matcheDTO.setTeam1Name(matcheDTO.getTeam1());
 		matcheDTO.setTeam2Name(matcheDTO.getTeam2());
-		String strDate= formatter.format(matcheDTO.getDatetime());  
-		matcheDTO.setDateShow(strDate);
 		DataUtils.getMatchTypeShort(matcheDTO);
+		String strDate= formatterrr.format(matcheDTO.getDatetime());  
+		matcheDTO.setDate(format.parse(strDate));
 		return matcheDTO;
 	}
 
@@ -413,9 +425,33 @@ public class MatchService implements IMatchService{
 	}
 
 	@Override
-	public List<MatchTeamBean> getTeamDetailsWithPoints(String teamId) {
-		List<MatchTeamBean> teamDetailWithPoints = matchDao.getTeamDetailsWithPoints(teamId);
+	public List<MatchTeamBean> getTeamDetailsWithPoints(String matchId, String teamId) {
+		List<MatchTeamBean> teamDetailWithPoints = matchDao.getTeamDetailsWithPoints(matchId, teamId);
+		playersShortName(teamDetailWithPoints);
 		return teamDetailWithPoints;
+	}
+	
+	/**
+	 * @param matchBean
+	 * @param playerDTO
+	 */
+	private void playersShortName(List<MatchTeamBean> matchTeamBeanList) {
+		for(MatchTeamBean matchBean : matchTeamBeanList) {
+			String[] str = matchBean.getName().split(" ");
+			int totalWords = str.length;
+			if(totalWords > 1) {
+				String firstWord = str[0].substring(0, 1);
+				if(totalWords == 2) {
+					matchBean.setName(firstWord+". "+str[1]);						
+				}else if (totalWords >= 3) {
+					matchBean.setName(firstWord+". "+str[1].substring(0, 1)+". "+str[2]);
+				}else {
+					matchBean.setName(matchBean.getName());
+				}
+			} else {
+				matchBean.setName(matchBean.getName());
+			}			
+		}
 	}
 
 	@Override
@@ -442,6 +478,11 @@ public class MatchService implements IMatchService{
 	@Override
 	public LeagueDTO getLeague(String leagueId) {
 		return matchDao.getLeague(leagueId);
+	}
+
+	@Override
+	public List<MatchesDTO> getActiveMatches() {
+		return matchDao.getActiveMatches();
 	}
 
 

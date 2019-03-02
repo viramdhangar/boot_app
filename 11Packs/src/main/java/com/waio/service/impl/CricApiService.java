@@ -20,8 +20,8 @@ import com.waio.service.ICricApiService;
 public class CricApiService implements ICricApiService {
 
 	@Override
-	public NewMatchesData newMatches() {
-		final String uri = "https://cricapi.com/api/matches?apikey=VC60hvq1q4N0UK2m0gZwyTfvcl92";
+	public NewMatchesData newMatches(String API_KEY) {
+		final String uri = "https://cricapi.com/api/matches?apikey="+API_KEY+"";
 		RestTemplate restTemplate = new RestTemplate();
 		try {
 			NewMatchesData result = restTemplate.getForObject(uri, NewMatchesData.class);
@@ -35,12 +35,12 @@ public class CricApiService implements ICricApiService {
 	}
 
 	@Override
-	public TeamSquad getSquad(String uniqueId) {
-		final String uri = "https://cricapi.com/api/fantasySquad?apikey=VC60hvq1q4N0UK2m0gZwyTfvcl92&unique_id="+uniqueId+"";
+	public TeamSquad getSquad(String uniqueId, String API_KEY) {
+		final String uri = "https://cricapi.com/api/fantasySquad?apikey=VXGb0jCOh4SG9mOIEqa3qQqJbGO2&unique_id="+uniqueId+"";
 		RestTemplate restTemplate = new RestTemplate();
+		TeamSquad result = null;
 		try {
-			TeamSquad result = restTemplate.getForObject(uri, TeamSquad.class);
-
+			result = restTemplate.getForObject(uri, TeamSquad.class);
 			System.out.println(result);
 			return result;
 		} catch (Exception ex) {
@@ -50,8 +50,8 @@ public class CricApiService implements ICricApiService {
 	}
 	
 	@Override
-	public PlayerDTO playerInfo(String id) {
-		final String uri = "https://cricapi.com/api/playerStats?apikey=VC60hvq1q4N0UK2m0gZwyTfvcl92&pid="+id+"";
+	public PlayerDTO playerInfo(String id, String API_KEY) {
+		final String uri = "https://cricapi.com/api/playerStats?apikey=VXGb0jCOh4SG9mOIEqa3qQqJbGO2&pid="+id+"";
 		RestTemplate restTemplate = new RestTemplate();
 		try {
 			PlayerDTO result = restTemplate.getForObject(uri, PlayerDTO.class);
@@ -63,8 +63,8 @@ public class CricApiService implements ICricApiService {
 	}
 	
 	@Override
-	public FantacySummaryApi fantacySummaryApi(String id) {
-		final String uri = "https://cricapi.com/api/fantasySummary?apikey=VC60hvq1q4N0UK2m0gZwyTfvcl92&unique_id="+id+"";
+	public FantacySummaryApi fantacySummaryApi(String id, String API_KEY) {
+		final String uri = "https://cricapi.com/api/fantasySummary?apikey=VXGb0jCOh4SG9mOIEqa3qQqJbGO2&unique_id="+id+"";
 		RestTemplate restTemplate = new RestTemplate();
 		try {
 			FantacySummaryApi result = restTemplate.getForObject(uri, FantacySummaryApi.class);

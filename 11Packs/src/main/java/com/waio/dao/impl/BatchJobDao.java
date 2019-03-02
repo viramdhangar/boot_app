@@ -145,7 +145,7 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 	}
 	
 	@Override
-	public int insertLeagues(List<MatchesDTO> matchesList) {
+	public int insertLeagues(final List<MatchesDTO> matchesList) {
 		String sql = "insert into match_leagues (league_id, match_id, size) select league.id, ? match_id, league.size from league on duplicate key update created=current_timestamp";
 		int[] insertedLeagues = getJdbcTemplate().batchUpdate(sql,
 	            new BatchPreparedStatementSetter() {
@@ -161,6 +161,7 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 	                    return matchesList.size();
 	                }
 	            });
+		System.out.println("Leagues added for matches "+insertedLeagues.length);
 		return insertedLeagues.length;
 	}
 	

@@ -32,4 +32,9 @@ public interface IBatchJobService {
 	 * @return
 	 */
 	int updateScoreAndCreatePoints(List<PlayerDTO> playerList, String matchId);
+	/**
+	 * @return
+	 * @throws Exception
+	 */
+	NewMatchesData updateMatchesStatus() throws Exception;
 }
