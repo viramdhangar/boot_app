@@ -12,9 +12,14 @@ import com.waio.model.MatchLeaguesBean;
 import com.waio.model.MatchTeam;
 import com.waio.model.MatchTeamBean;
 import com.waio.model.PlayerDTO;
+import com.waio.model.PointSystemDTO;
 import com.waio.model.TeamRankPoints;
 import com.waio.model.WinningBreakupDTO;
 
+/**
+ * @author Viramm
+ *
+ */
 public interface IMatchDao {
 
 	public List<MatchesDTO> getMatches();
@@ -35,8 +40,8 @@ public interface IMatchDao {
 	List<MatchLeaguesBean> getJoinedMatchLeagues(String uniqueNumber);
 	List<MatchTeam> getJoinedLeagueTeams(String uniqueNumber, String matchId, String leagueId);
 	int switchTeam(MatchTeam matchTeam, String leagueId, String teamIdOld);
-	List<MatchTeam> getJoinedLeagueAllTeams(String matchId, String leagueId);
-	List<TeamRankPoints> getTeamsRankAndPoints(String uniqueNumber, String matchId, String leagueId);
+	List<MatchTeam> getJoinedLeagueAllTeams(String uniqueNumber, String matchId, String leagueId);
+	List<TeamRankPoints> getTeamsRankAndPoints(String matchId, String leagueId);
 	List<MatchTeamBean> getTeamDetailsWithPoints(String matchId, String teamId);
 	int validateSmallOrGrand(String leagueId, String matchId, String createdId);
 	MatchesDTO getMatch(String matchId);
@@ -44,4 +49,8 @@ public interface IMatchDao {
 	AccountDTO addBalance(AccountDTO account, boolean debit);
 	MatchTeam getTeam(String teamId);
 	LeagueDTO getLeague(String leagueId);
+	List<WinningBreakupDTO> getWinningBreakupByLeagueId(String LeagueId);
+	List<MatchesDTO> getCompletedMatchesForWinning();
+	boolean validateMatchInSquad(String matchId);
+	List<PointSystemDTO> getFantasyPoints();
 }

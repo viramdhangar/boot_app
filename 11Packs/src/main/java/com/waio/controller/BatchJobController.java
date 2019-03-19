@@ -1,15 +1,10 @@
 package com.waio.controller;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,26 +27,34 @@ public class BatchJobController {
 	@Autowired
 	IMatchService matchService;
 
-//	@Scheduled(cron = "0 0 1 * * ?")
-	@GetMapping("/v1/matchesAPI")
+	@Scheduled(cron = "0 0 1 * * ?")
+	@PostMapping("/v1/matchesAPI")
 	public NewMatchesData matchesAPI() {
 		try {
+			// update score first before updating matches status
+			updateScore();
+			// update match score
 			return batchJobService.insertNewMatches();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.out.println("Error.."+e.getMessage());
 			return null;
 		}
 	}
 	
-//	@Scheduled(cron = "20 * * * * ?")
-	@GetMapping("/v1/updateMatchesStatus")
+	@Scheduled(cron = "30 * * * * ?")
+	@PostMapping("/v1/updateMatchesStatus")
 	public NewMatchesData updateMatchesStatus() {
 		try {
+			// update score first before updating matches status
+			updateScore();
+			// update match score
 			return batchJobService.updateMatchesStatus();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			System.out.println("Error.."+e.getMessage());
 			return null;
 		}
 	}
@@ -61,7 +64,6 @@ public class BatchJobController {
 		return batchJobService.createLeague(leagueDTO);
 	}
 
-	//@Scheduled(cron = "15 * * * * ?")
 	@PostMapping("/v1/updateScoreAndPoints")
 	public @ResponseBody String updateScore() {
 		List<MatchesDTO> matches = new ArrayList<MatchesDTO>();
@@ -75,8 +77,41 @@ public class BatchJobController {
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-			System.out.println("Some issue with the job please check logs..");
+			System.out.println("Error.."+e.getMessage());
 		}
-		return "Job executed successfully";
+		return "updateScoreAndPoints Job executed successfully";
 	}
+
+	// No API used
+	@PostMapping("/v1/declareWinner/{matchId}")
+	public String declareWinner(@PathVariable String matchId) {
+		//List<MatchesDTO> matches = new ArrayList<MatchesDTO>();
+		try {
+			//matches = matchService.getCompletedMatchesForWinning();
+			batchJobService.declareWinner(matchId);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.out.println("Error.."+e.getMessage());
+			return "Error.."+e.getMessage();
+		}
+		return "Declare Winner Job executed successfully";
+	}
+
+	// No API used
+	@PostMapping("/v1/distributeWinning/{matchId}")
+	public String distributeWinning(@PathVariable String matchId) {
+		//List<MatchesDTO> matches = new ArrayList<MatchesDTO>();
+		try {
+			//matches = matchService.getCompletedMatchesForWinning();
+			batchJobService.distributeWinnersWinning(matchId);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.out.println("Error.."+e.getMessage());
+		}
+		return "Distribute Winning Job executed successfully";
+	}
+	
+	
 }

@@ -14,8 +14,21 @@ public class LeagueDTO {
 	private int winningAmount;
 	private int breakupId;
 	private String status;
+	private int progress;
 	private List<WinningBreakupDTO> breakup;
 	
+	/**
+	 * @return the progress
+	 */
+	public int getProgress() {
+		return progress;
+	}
+	/**
+	 * @param progress the progress to set
+	 */
+	public void setProgress(int progress) {
+		this.progress = progress;
+	}
 	/**
 	 * @return the status
 	 */

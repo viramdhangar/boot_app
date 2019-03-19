@@ -45,14 +45,22 @@ public class UserService implements IUserService {
 		return userDao.createUser(userDTO);
 	}
 
+	public int createUserInitially(String uniqueNumber) {
+
+		// set authorities
+		UserDTO userDTO = new UserDTO();
+		userDTO.setUserName(uniqueNumber);
+		userDTO.setUniqueNumber(uniqueNumber);
+		return userDao.createUserInitially(userDTO);
+	}
 	/**
 	 * @param userDTO
 	 */
 	@Override
 	public String userValidation(UserDTO userDTO) {
 		// check if user is already registered
-		if (userDao.validateDuplicateUser(userDTO) > 0) {
-			return "Email or mobile number already exist.";
+		if (userDao.validateDuplicateEmail(userDTO) > 0) {
+			return "Email already exist.";
 		}
 		// validate referral code if applied
 		if(StringUtils.isNotEmpty(userDTO.getReferralCode())) {
@@ -102,5 +110,10 @@ public class UserService implements IUserService {
 	@Override
 	public int validateReferralCode(UserDTO userDTO) {
 		return userDao.validateReferralCode(userDTO);
+	}
+
+	@Override
+	public String checkIfCompleteDetailExist(String username) {
+		return userDao.checkIfCompleteDetailExist(username);
 	}
 }

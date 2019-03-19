@@ -29,6 +29,7 @@ import com.waio.model.MatchLeaguesDTO;
 import com.waio.model.MatchTeam;
 import com.waio.model.MatchTeamBean;
 import com.waio.model.PlayerDTO;
+import com.waio.model.PointSystemDTO;
 import com.waio.model.TeamRankPoints;
 import com.waio.model.WinningBreakupDTO;
 import com.waio.service.IMatchService;
@@ -50,28 +51,37 @@ public class MatchService implements IMatchService{
 		Date today = new Date();
 		SimpleDateFormat formatterrr = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");  
 		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
-		TimeZone istTime = TimeZone.getTimeZone("IST");
-		formatterrr.setTimeZone(istTime);
+		SimpleDateFormat dateShowFormat = new SimpleDateFormat("dd-MMM-yyyy");  
+		//TimeZone istTime = TimeZone.getTimeZone("IST");
+		//formatterrr.setTimeZone(istTime);
 		
 		Iterator<MatchesDTO> it = matchesList.iterator();
 		while(it.hasNext()) {
 			MatchesDTO matches = it.next();
-			String strrDate= formatterrr.format(matches.getDatetime());  
-			Date matchDate = format.parse(strrDate);
-			String strToday= formatterrr.format(today);  
-			Date todayDate = format.parse(strToday);
 			
-			if(matchDate.before(todayDate)) {
+			// if squad is not present then remove from list
+			boolean b = matchDao.validateMatchInSquad(matches.getUnique_id());
+			if(b == false) {
 				it.remove();
-			}else {
-				matches.setTeam1Short(DataUtils.getShortForm( matches.getTeam1()));
-				matches.setTeam2Short(DataUtils.getShortForm(matches.getTeam2()));
-				matches.setFormattedTeamName(matches.getTeam1Short()+"  vs  "+matches.getTeam2Short());
-				matches.setTeam1Name(matches.getTeam1());
-				matches.setTeam2Name(matches.getTeam2());
-				DataUtils.getMatchTypeShort(matches);  
-			    String strDate= formatterrr.format(matches.getDatetime());  
-			    matches.setDate(format.parse(strDate));
+			} else {
+				String strrDate= formatterrr.format(matches.getDatetime());  
+				Date matchDate = format.parse(strrDate);
+				String strToday= formatterrr.format(today);  
+				Date todayDate = format.parse(strToday);
+				
+				if(matchDate.before(todayDate)) {
+					it.remove();
+				}else {
+					matches.setTeam1Short(DataUtils.getShortForm( matches.getTeam1()));
+					matches.setTeam2Short(DataUtils.getShortForm(matches.getTeam2()));
+					matches.setFormattedTeamName(matches.getTeam1Short()+"  vs  "+matches.getTeam2Short());
+					matches.setTeam1Name(matches.getTeam1());
+					matches.setTeam2Name(matches.getTeam2());
+					DataUtils.getMatchTypeShort(matches);  
+				    String strDate= formatterrr.format(matches.getDatetime());  
+				    matches.setDate(format.parse(strDate));
+				    matches.setDateShow(dateShowFormat.format(matches.getDatetime()));
+				}
 			}
 		}
 		LOG.info("Getting matches list.");
@@ -82,8 +92,8 @@ public class MatchService implements IMatchService{
 	public MatchesDTO getMatch(String matchId) throws Exception {
 		SimpleDateFormat formatterrr = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");  
 		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
-		TimeZone istTime = TimeZone.getTimeZone("IST");
-		formatterrr.setTimeZone(istTime);
+		/*TimeZone istTime = TimeZone.getTimeZone("IST");
+		formatterrr.setTimeZone(istTime);*/
 		
 		MatchesDTO matches = matchDao.getMatch(matchId);
 		matches.setTeam1Short(DataUtils.getShortForm(matches.getTeam1()));
@@ -326,7 +336,7 @@ public class MatchService implements IMatchService{
 		Date today = new Date();
 		List<LeagueDTO> leagueList = null;
 		String matchId = StringUtils.EMPTY;
-		SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");  
+		SimpleDateFormat formatterrr = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");  
 		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
 		for(MatchLeaguesBean matchLeague : list) {
 			if(!matchLeague.getUniqueId().equalsIgnoreCase(matchId)) {
@@ -335,10 +345,10 @@ public class MatchService implements IMatchService{
 				matchLeagueObject = new MatchLeaguesDTO();
 				leagueList = new ArrayList<LeagueDTO>();
 				
-				String strDate= formatter.format(matchLeague.getDatetime());  
+				String strDate= formatterrr.format(matchLeague.getDatetime());  
 				Date matchDate = format.parse(strDate);
 				
-				String strToday= formatter.format(today);  
+				String strToday= formatterrr.format(today);  
 				Date todayDate = format.parse(strToday);
 				
 				if(matchDate.after(todayDate)) {
@@ -393,8 +403,8 @@ public class MatchService implements IMatchService{
 	private MatchesDTO setMatchObject(MatchLeaguesBean matchLeague) throws Exception {
 		SimpleDateFormat formatterrr = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");  
 		DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
-		TimeZone istTime = TimeZone.getTimeZone("IST");
-		formatterrr.setTimeZone(istTime);
+		/*TimeZone istTime = TimeZone.getTimeZone("IST");
+		formatterrr.setTimeZone(istTime);*/
 		
 		MatchesDTO matcheDTO = new MatchesDTO();
 		matcheDTO.setUnique_id(matchLeague.getUniqueId());
@@ -415,13 +425,35 @@ public class MatchService implements IMatchService{
 	}
 
 	@Override
-	public List<MatchTeam> getJoinedLeagueAllTeams(String matchId, String leagueId) {
-		return matchDao.getJoinedLeagueAllTeams(matchId, leagueId);
+	public List<MatchTeam> getJoinedLeagueAllTeams(String uniqueNumber, String matchId, String leagueId) {
+		List<MatchTeam>  myTeams = new ArrayList<>();
+		List<MatchTeam>  allTeams = new ArrayList<>();
+		List<MatchTeam>  teams = matchDao.getJoinedLeagueAllTeams(uniqueNumber, matchId, leagueId);
+		for(MatchTeam mt: teams) {
+			if(mt.getUniqueNumber().equalsIgnoreCase(uniqueNumber)) {
+				myTeams.add(mt);
+			} else {
+				allTeams.add(mt);
+			}
+		}
+		myTeams.addAll(allTeams);
+		return myTeams;
 	}
 
 	@Override
 	public List<TeamRankPoints> getTeamsRankAndPoints(String uniqueNumber, String matchId, String leagueId) {
-		return matchDao.getTeamsRankAndPoints(uniqueNumber, matchId, leagueId);
+		List<TeamRankPoints> myTeams = new ArrayList<>();
+		List<TeamRankPoints> allTeams = new ArrayList<>();
+		List<TeamRankPoints> teams = matchDao.getTeamsRankAndPoints(matchId, leagueId);
+		for(TeamRankPoints trp : teams) {
+			if(uniqueNumber.equalsIgnoreCase(trp.getCreatedId())) {
+				myTeams.add(trp);
+			}else {
+				allTeams.add(trp);
+			}
+		}
+		myTeams.addAll(allTeams);
+		return myTeams;
 	}
 
 	@Override
@@ -485,5 +517,15 @@ public class MatchService implements IMatchService{
 		return matchDao.getActiveMatches();
 	}
 
+	@Override
+	public List<MatchesDTO> getCompletedMatchesForWinning() {
+		return matchDao.getCompletedMatchesForWinning();
+	}
+
+	@Override
+	@Cacheable(value = "fantasyPoints")
+	public List<PointSystemDTO> getFantasyPoints() {
+		return matchDao.getFantasyPoints();
+	}
 
 }

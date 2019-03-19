@@ -11,6 +11,7 @@ import com.waio.model.MatchLeaguesDTO;
 import com.waio.model.MatchTeam;
 import com.waio.model.MatchTeamBean;
 import com.waio.model.PlayerDTO;
+import com.waio.model.PointSystemDTO;
 import com.waio.model.TeamRankPoints;
 import com.waio.model.WinningBreakupDTO;
 
@@ -33,7 +34,7 @@ public interface IMatchService {
 	List<MatchLeaguesDTO> getJoinedMatchLeagues(String uniqueNumber) throws Exception;
 	List<MatchTeam> getJoinedLeagueTeams(String uniqueNumber, String matchId, String leagueId);
 	String switchTeam(MatchTeam matchTeam, String leagueId, String teamIdOld);
-	List<MatchTeam> getJoinedLeagueAllTeams(String matchId, String leagueId);
+	List<MatchTeam> getJoinedLeagueAllTeams(String uniqueNumber, String matchId, String leagueId);
 	List<TeamRankPoints> getTeamsRankAndPoints(String uniqueNumber, String matchId, String leagueId);
 	List<MatchTeamBean> getTeamDetailsWithPoints(String matchId, String teamId);
 	int validateSmallOrGrand(String leagueId, String matchId, String createdId);
@@ -42,4 +43,6 @@ public interface IMatchService {
 	AccountDTO addBalance(AccountDTO account);
 	MatchTeam getTeam(String teamId);
 	LeagueDTO getLeague(String leagueId);
+	List<MatchesDTO> getCompletedMatchesForWinning();
+	List<PointSystemDTO> getFantasyPoints();
 }

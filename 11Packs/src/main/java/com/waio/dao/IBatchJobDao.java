@@ -7,10 +7,12 @@ import java.util.List;
 import java.util.Map;
 
 import com.waio.cricapi.MatchesDTO;
+import com.waio.model.AccountDTO;
 import com.waio.model.LeagueDTO;
 import com.waio.model.PlayerDTO;
 import com.waio.model.PlayerPointsDTO;
 import com.waio.model.PlayerScoreBean;
+import com.waio.model.WinningPriceDTO;
 
 /**
  * @author Viramm
@@ -81,4 +83,29 @@ public interface IBatchJobDao {
 	 * @param playerList
 	 */
 	int playing11Declared(final String uniqueId, final List<PlayerDTO> playerList);
+	/**
+	 * @param matchIds
+	 * @return
+	 */
+	List<LeagueDTO> getEligibleLeaguesOfMatch(String matchIds);
+	/**
+	 * @param winningList
+	 * @return
+	 */
+	int saveWinning(final List<WinningPriceDTO> winningList);
+	/**
+	 * * @param matchId
+	 * @return
+	 */
+	int distributeWinnersWinning(String matchId);
+	/**
+	 * @param matchId
+	 * @return
+	 */
+	int updateToWallet(String username, String matchId, String leagueId, String teamId);
+	/**
+	 * @param matchId
+	 * @return
+	 */
+	int distributeWinnersWinningInWallet(String matchId);
 }

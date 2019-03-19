@@ -3,11 +3,14 @@
  */
 package com.waio.service.impl;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -32,10 +35,14 @@ import com.waio.cricapi.NewMatchesData;
 import com.waio.cricapi.Team;
 import com.waio.cricapi.TeamSquad;
 import com.waio.dao.IBatchJobDao;
+import com.waio.dao.IMatchDao;
 import com.waio.model.LeagueDTO;
 import com.waio.model.PlayerDTO;
 import com.waio.model.PlayerPointsDTO;
 import com.waio.model.PlayerScoreBean;
+import com.waio.model.TeamRankPoints;
+import com.waio.model.WinningBreakupDTO;
+import com.waio.model.WinningPriceDTO;
 import com.waio.service.IBatchJobService;
 import com.waio.service.ICricApiService;
 import com.waio.util.AppConstants;
@@ -58,6 +65,9 @@ public class BatchJobService implements IBatchJobService{
 	@Autowired
 	private IBatchJobDao batchJobDao;
 	
+	@Autowired
+	IMatchDao matchDao;
+	
 	@Override //@Autowired
 	public NewMatchesData insertNewMatches() throws Exception {
 		
@@ -77,7 +87,7 @@ public class BatchJobService implements IBatchJobService{
 		//DateFormat format = new SimpleDateFormat("dd-MMM-yyyy HH:mm:ss");
 		
 		Date today = new Date();	
-		long ltime=today.getTime()+3*24*60*60*1000;
+		long ltime=today.getTime()+6*24*60*60*1000;
 		long oneDay=today.getTime()-1*24*60*60*1000;
 		Date plusThreeDays=new Date(ltime);
 		Date minusOneDay=new Date(oneDay);
@@ -301,7 +311,7 @@ public class BatchJobService implements IBatchJobService{
 	public String fantasySummaryApi(String matchId) {
 
 		FantacySummaryApi apiData = cricApiService.fantacySummaryApi(matchId, AppConstants.CRIC_API_KEY1);
-		if(null == apiData) {
+		if(null == apiData.getData()) {
 			System.out.println("First API_key is returning empty, trying another");
 			apiData = cricApiService.fantacySummaryApi(matchId, AppConstants.CRIC_API_KEY2);
 			if(null == apiData) {
@@ -553,5 +563,107 @@ public class BatchJobService implements IBatchJobService{
 			System.out.println(e);
 			return null;
 		}
+	}
+	
+	@Override
+	public void declareWinner(String matchId) {
+
+		/*
+		 * Collection<String> matchIds = CollectionUtils.collect(matchesList, new
+		 * Transformer<MatchesDTO, String>() {
+		 * 
+		 * @Override public String transform(MatchesDTO object) { return
+		 * object.getUnique_id(); } });
+		 */
+
+		// String matchesIDs = StringUtils.join(matchIds, ",");
+		List<LeagueDTO> leagues = batchJobDao.getEligibleLeaguesOfMatch(matchId);
+
+		List<WinningPriceDTO> wpd = new ArrayList<>();
+		WinningPriceDTO wpdDTO = null;
+
+		for (LeagueDTO league : leagues) {
+			List<WinningBreakupDTO> wbList = matchDao.getWinningBreakupByLeagueId(league.getId());
+
+			Map<String, List<TeamRankPoints>> map = new HashMap<>();
+			List<TeamRankPoints> trpList = null;
+
+			Map<Integer, BigDecimal> breakUpMap = new HashMap<>();
+			for (WinningBreakupDTO wb : wbList) {
+				String rank = wb.getPrizeRank();
+				String[] rankArray = rank.split("-");
+				if (rankArray.length == 1) {
+					int firstValue = Integer.parseInt(rankArray[0]);
+					breakUpMap.put(firstValue, wb.getPrizeMoney());
+				}
+				if (rankArray.length == 2) {
+					int firstValue = Integer.parseInt(rankArray[0]);
+					int secondValue = Integer.parseInt(rankArray[1]);
+					for (int i = firstValue; i <= secondValue; i++) {
+						breakUpMap.put(i, wb.getPrizeMoney());
+					}
+				}
+			}
+			
+			if (CollectionUtils.isNotEmpty(wbList)) {
+				List<TeamRankPoints> teamRank = matchDao.getTeamsRankAndPoints(league.getMatchId(), league.getId());
+
+				for (Map.Entry<Integer, BigDecimal> wb : breakUpMap.entrySet()) {
+					trpList = new ArrayList<>();
+					for (TeamRankPoints trp : teamRank) {
+						if (wb.getKey() == trp.getTeamRank()) {
+							trpList.add(trp);
+						} else {
+
+						}
+					}
+					if (CollectionUtils.isNotEmpty(trpList)) {
+						map.put(String.valueOf(wb.getKey()), trpList);
+					}
+				}
+			}
+
+			for (Map.Entry<String, List<TeamRankPoints>> entry : map.entrySet()) {
+				int size = entry.getValue().size();
+
+				int whatIsRank = Integer.parseInt(entry.getKey());
+
+				BigDecimal totalAmount = new BigDecimal(0);
+				for (TeamRankPoints trp : entry.getValue()) {
+					if(breakUpMap.containsKey(whatIsRank)) {
+						totalAmount = totalAmount.add(breakUpMap.get(whatIsRank));
+						whatIsRank++;
+					}
+				}
+				for (TeamRankPoints trp : entry.getValue()) {
+					wpdDTO = new WinningPriceDTO();
+					wpdDTO.setTeamRank(entry.getKey());
+					wpdDTO.setTeamId(trp.getTeamId());
+					wpdDTO.setLeagueId(league.getId());
+					wpdDTO.setMatchId(league.getMatchId());
+					wpdDTO.setUserName(trp.getCreatedId());
+					BigDecimal bd = new BigDecimal(size);
+					wpdDTO.setWinningAmount(totalAmount.divide(bd, MathContext.DECIMAL128));
+					wpd.add(wpdDTO);
+				}
+			}
+		}
+		// save winnings
+		System.out.println("inserting winning for match: " + matchId);
+		try {
+			int insertedRecords = batchJobDao.saveWinning(wpd);
+			System.out.println("inserted " + insertedRecords + " records for match in winning: " + matchId);
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	@Override
+	public int distributeWinnersWinning(String matchId) {
+		int insertedRecords = batchJobDao.distributeWinnersWinningInWallet(matchId);
+		if (insertedRecords > 0) {
+			System.out.println("inserted " + insertedRecords + " records for match in winning: " + matchId);
+		}
+		return insertedRecords;
 	}
 }

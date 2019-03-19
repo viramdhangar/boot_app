@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.waio.cricapi.MatchesDTO;
+import com.waio.exceptions.ConflictedException;
 import com.waio.exceptions.ResourceNotFoundException;
 import com.waio.model.AccountDTO;
 import com.waio.model.JoinLeague;
@@ -29,6 +30,7 @@ import com.waio.model.MatchLeaguesDTO;
 import com.waio.model.MatchTeam;
 import com.waio.model.MatchTeamBean;
 import com.waio.model.PlayerDTO;
+import com.waio.model.PointSystemDTO;
 import com.waio.model.TeamRankPoints;
 import com.waio.model.WinningBreakupDTO;
 import com.waio.service.IMatchService;
@@ -163,16 +165,20 @@ public class MatchController {
 
 	//@PostMapping(value = "/v1/joinLeague/{leagueId}")
 	@RequestMapping(value = "/v1/joinLeague/{leagueId}", produces = { "application/JSON" }, method=RequestMethod.POST)
-	public String joinLeague(@PathVariable String leagueId, @RequestBody MatchTeam team) {
+	public String joinLeague(@PathVariable String leagueId, @RequestBody MatchTeam team) throws ConflictedException {
 		String message = StringUtils.EMPTY;
-		if(matchService.getMatchLiveStatus(team.getMatchId()).getMatchStarted().equalsIgnoreCase("false")) {
-			if(matchService.validateSmallOrGrand(leagueId, team.getMatchId(), team.getUniqueNumber()) > 0) {
-				message = "Small leagues can not be joined with multiple teams, less then or equals 10 members leagues considered as small league";
-				throw new ValidationException(message); 
-			} else {
-				message = matchService.joinLeague(team, leagueId);
+			if (matchService.getMatchLiveStatus(team.getMatchId()).getMatchStarted().equalsIgnoreCase("false")) {
+				if (matchService.validateSmallOrGrand(leagueId, team.getMatchId(), team.getUniqueNumber()) > 0) {
+					message = "Small leagues can not be joined with multiple teams, less then or equals 10 members leagues considered as small league";
+					throw new ValidationException(message);
+				} else {
+					try {
+						message = matchService.joinLeague(team, leagueId);
+					} catch (Exception e) {
+						throw new ConflictedException("Selected team allready Joined");
+					}
+				}
 			}
-		}
 		return message;
 	}
 
@@ -198,11 +204,11 @@ public class MatchController {
 		return matchTeam;
 	}
 	
-	@GetMapping(value = "/v1/joinedLeagueAllTeams/{matchId}/{leagueId}")
-	public List<MatchTeam> getJoinedLeagueAllTeams(@PathVariable String matchId,
+	@GetMapping(value = "/v1/joinedLeagueAllTeams/{uniqueNumber}/{matchId}/{leagueId}")
+	public List<MatchTeam> getJoinedLeagueAllTeams(@PathVariable String uniqueNumber, @PathVariable String matchId,
 			@PathVariable String leagueId) {
 		List<MatchTeam> matchTeam = new ArrayList<MatchTeam>();
-		matchTeam = matchService.getJoinedLeagueAllTeams(matchId, leagueId);
+		matchTeam = matchService.getJoinedLeagueAllTeams(uniqueNumber, matchId, leagueId);
 		return matchTeam;
 	}
 	
@@ -226,8 +232,12 @@ public class MatchController {
 	
 	@GetMapping(value = "/v1/teamDetailWithPoints/{matchId}/{teamId}")
 	public List<MatchTeamBean> getTeamsRankAndPoints(@PathVariable String matchId, @PathVariable String teamId) {
+		try {
 		List<MatchTeamBean> teamDetailWithPoints = matchService.getTeamDetailsWithPoints(matchId, teamId);
 		return teamDetailWithPoints;
+		}catch(Exception e) {
+			return null;
+		}
 	}
 	
 	@RequestMapping(value = "/v1/addMoney", produces = { "application/JSON" }, method=RequestMethod.POST)
@@ -240,5 +250,11 @@ public class MatchController {
 	public AccountDTO account(@PathVariable String userName) throws ResourceNotFoundException {
 		AccountDTO account = matchService.account(userName);
 		return account;
+	}
+	
+	@GetMapping("/v1/fantasyPoints")
+	public List<PointSystemDTO> fantasyPoints() throws ResourceNotFoundException {
+		List<PointSystemDTO> fantasyPointsList = matchService.getFantasyPoints();
+		return fantasyPointsList;
 	}
 }

@@ -1,8 +1,10 @@
 package com.waio.model;
 
+import java.math.BigDecimal;
+
 public class WinningBreakupDTO {
 	private String id;
-	private int prizeMoney;
+	private BigDecimal prizeMoney;
 	private String prizeRank;
 	private int winningPercent;
 	/**
@@ -32,13 +34,13 @@ public class WinningBreakupDTO {
 	/**
 	 * @return the prizeMoney
 	 */
-	public int getPrizeMoney() {
+	public BigDecimal getPrizeMoney() {
 		return prizeMoney;
 	}
 	/**
 	 * @param prizeMoney the prizeMoney to set
 	 */
-	public void setPrizeMoney(int prizeMoney) {
+	public void setPrizeMoney(BigDecimal prizeMoney) {
 		this.prizeMoney = prizeMoney;
 	}
 	/**

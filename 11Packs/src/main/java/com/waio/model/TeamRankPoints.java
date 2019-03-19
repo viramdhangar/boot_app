@@ -3,6 +3,8 @@
  */
 package com.waio.model;
 
+import java.math.BigDecimal;
+
 /**
  * @author Viramm
  *
@@ -14,6 +16,32 @@ public class TeamRankPoints {
 	private String teamId;
 	private String teamName;
 	private String points;
+	private BigDecimal winningAmount;
+	private String firstName;
+	/**
+	 * @return the firstName
+	 */
+	public String getFirstName() {
+		return firstName;
+	}
+	/**
+	 * @param firstName the firstName to set
+	 */
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+	/**
+	 * @return the winningAmount
+	 */
+	public BigDecimal getWinningAmount() {
+		return winningAmount;
+	}
+	/**
+	 * @param winningAmount the winningAmount to set
+	 */
+	public void setWinningAmount(BigDecimal winningAmount) {
+		this.winningAmount = winningAmount;
+	}
 	/**
 	 * @return the teamName
 	 */

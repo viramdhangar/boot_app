@@ -22,7 +22,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.waio.model.Employee;
-import com.waio.model.UserDTO;
 import com.waio.service.IEmployeeService;
 
 @RestController
@@ -30,11 +29,6 @@ public class EmployeeController {
 
 	@Autowired
 	IEmployeeService employeeService;
-	
-	@RequestMapping(value="/welcome", method=RequestMethod.GET)
-	public ModelAndView welcome() {
-		return new ModelAndView("welcome");
-	}
 	
 	@RequestMapping(value="/login")
 	public Object user(HttpServletRequest request, HttpSession session) {

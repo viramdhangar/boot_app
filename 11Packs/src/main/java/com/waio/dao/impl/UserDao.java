@@ -28,10 +28,17 @@ public class UserDao extends AbstractDaoSupport implements IUserDao {
 	@Override
 	public int createUser(UserDTO userDTO) {
 		try {
-		int savedRecords = getJdbcTemplate().update(UserSql.CREATE_USER_SQL,
-				new Object[] { userDTO.getUserName(), userDTO.getPassword(), userDTO.getUniqueNumber(),
-						userDTO.getEmail(), userDTO.getFirstName(), userDTO.getLastName(), userDTO.getMiddleName(),
-						userDTO.getFirstName().toUpperCase()+referralNumber(userDTO) });
+			String sql = UserSql.UPDATE_USER_SQL;
+			String referalCode = userDTO.getFirstName().toUpperCase() + referralNumber(userDTO);
+			int savedRecords = getJdbcTemplate().update(sql,
+					new Object[] { userDTO.getPassword(),
+							userDTO.getUniqueNumber(), 
+							userDTO.getEmail(), 
+							userDTO.getFirstName(),
+							userDTO.getLastName(), 
+							userDTO.getMiddleName(),
+							referalCode, 
+							userDTO.getUserName() });
 		// insert user authorities
 		insertUserAuthorities(userDTO);
 		// insert referral code if entered
@@ -40,14 +47,32 @@ public class UserDao extends AbstractDaoSupport implements IUserDao {
 		}
 		return savedRecords;
 		}catch(Exception e){
+			e.printStackTrace();
+			System.out.println(e);
+			return 0;
+		}
+		
+	}
+	
+	public int createUserInitially(UserDTO userDTO) {
+		try {
+		int savedRecords = getJdbcTemplate().update(UserSql.CREATE_USER_INI_SQL,
+				new Object[] { userDTO.getUserName(), userDTO.getUniqueNumber() });
+		return savedRecords;
+		}catch(Exception e){
 			System.out.println(e);
 			return 0;
 		}
 	}
 
+	public String checkIfCompleteDetailExist(String username) {
+		return getJdbcTemplate().queryForObject(UserSql.VALIDATE_USER_DETAIL_SQL, new Object[] { username }, String.class);
+	}
+	
 	private int referralNumber(UserDTO userDTO) {
 		getJdbcTemplate().update(UserSql.CREATE_QNIQUE_REFERRAL_CODE_SQL, new Object[] { userDTO.getUserName() });
-		return getJdbcTemplate().queryForObject(UserSql.LAST_INSERTED_REFERRAL_CODE_SQL, new Object[] { userDTO.getUserName() }, Integer.class);
+		int i = getJdbcTemplate().queryForObject(UserSql.LAST_INSERTED_REFERRAL_CODE_SQL, new Object[] { userDTO.getUserName() }, Integer.class);
+		return i;
 	}
 	
 	private void insertReferralUser(UserDTO userDTO) {
@@ -64,6 +89,12 @@ public class UserDao extends AbstractDaoSupport implements IUserDao {
 	public int validateDuplicateUser(UserDTO userDTO) {
 		return getJdbcTemplate().queryForObject(UserSql.VALIDATE_DUPLICATE_USER_SQL,
 				new Object[] { userDTO.getUserName(), userDTO.getUserName(), userDTO.getUserName() }, Integer.class);
+	}
+	
+	@Override
+	public int validateDuplicateEmail(UserDTO userDTO) {
+		return getJdbcTemplate().queryForObject(UserSql.VALIDATE_DUPLICATE_EMAIL_SQL,
+				new Object[] { userDTO.getEmail(), userDTO.getEmail(), userDTO.getEmail() }, Integer.class);
 	}
 
 	@Override

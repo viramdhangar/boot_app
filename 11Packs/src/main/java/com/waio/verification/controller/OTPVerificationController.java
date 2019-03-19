@@ -20,8 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Message;
 import com.twilio.type.PhoneNumber;
+import com.waio.dao.IUserDao;
 import com.waio.email.api.IEmailService;
 import com.waio.email.api.MailResponse;
+import com.waio.model.UserDTO;
+import com.waio.service.IUserService;
 import com.waio.verification.model.OTPSystem;
 
 /**
@@ -37,6 +40,9 @@ public class OTPVerificationController {
 	@Autowired
 	IEmailService emailService;
 
+	@Autowired
+	private IUserService userService;
+	
 	private Map<String, OTPSystem> otpData = new HashMap<>();
 	private final static String ACCOUNT_SID= "AC49760cfa045068324aa0cf3fce89bc62";
 	private final static String AUTH_TOKEN= "1f6a835b5f9859d7cf5feefea879b00a";
@@ -47,17 +53,58 @@ public class OTPVerificationController {
 	
 	@PostMapping(value="/sendMobileOTP/{mobileNumber}/otp")
 	public ResponseEntity<Object> sendMobileOTP(@PathVariable("mobileNumber") String mobileNumber){
+		if(StringUtils.isNotEmpty(mobileNumber)) {
+			if(mobileNumber.length() != 10) {
+				return new ResponseEntity<>("Mobile Number is not valid", HttpStatus.BAD_REQUEST);
+			}else {
+				UserDTO userDTO = new UserDTO();
+				userDTO.setUserName(mobileNumber);
+				int i = userService.validateDuplicateUser(userDTO);	
+				if(i > 0) {
+					if(StringUtils.isNotEmpty(userService.checkIfCompleteDetailExist(mobileNumber))) {
+						return new ResponseEntity<>("Mobile number allready verified, please login now", HttpStatus.BAD_REQUEST);						
+					}else {
+						return new ResponseEntity<>("Mobile number allready verified, Please fill up all the details before login", HttpStatus.CONFLICT);
+					}
+				}
+			}
+		}
+		
+		if(otpData.containsKey(mobileNumber)) {
+			OTPSystem otpSystemExisting = otpData.get(mobileNumber);
+			if(otpSystemExisting.getExpiryTime() >= System.currentTimeMillis()) {
+				return new ResponseEntity<>("OTP is already sent, resend OTP after 5 minute", HttpStatus.BAD_REQUEST);
+			}
+		}
+		
 		OTPSystem otpSystem = new OTPSystem();
 		otpSystem.setMobileNumber(mobileNumber);
 		otpSystem.setOtp(String.valueOf(((int)(Math.random()*(10000 - 1000))) + 1000));
-		otpSystem.setExpiryTime(System.currentTimeMillis() + 60000);
+		otpSystem.setExpiryTime(System.currentTimeMillis() + 300000);
 		otpData.put(mobileNumber, otpSystem);
-		Message.creator(new PhoneNumber("+91"+mobileNumber+""), new PhoneNumber("+13342316476"), "Your OTP is "+otpSystem.getOtp()).create();
-		return new ResponseEntity<>("OTP is send successfully", HttpStatus.OK);
+		Message.creator(new PhoneNumber("+91"+mobileNumber+""), new PhoneNumber("+13342316476"), "Your OTP is "+otpSystem.getOtp()+" Please use this OTP to verify your mobile number with Striker11, OTP will expire in 5 minutes.").create();
+		return new ResponseEntity<>("OTP sent successfully", HttpStatus.OK);
 	}
 	
 	@PostMapping(value="/verifyMobileOTP/{mobileNumber}/otp")
 	public ResponseEntity<Object> verifyMobileOTP(@PathVariable("mobileNumber") String mobileNumber, @RequestBody OTPSystem requestOTPSystem){
+		
+		if(StringUtils.isNotEmpty(mobileNumber)) {
+			if(mobileNumber.length() != 10) {
+				return new ResponseEntity<>("Mobile Number is not valid", HttpStatus.BAD_REQUEST);
+			}else {
+				UserDTO userDTO = new UserDTO();
+				userDTO.setUserName(mobileNumber);
+				int i = userService.validateDuplicateUser(userDTO);	
+				if(i > 0) {
+					if(StringUtils.isNotEmpty(userService.checkIfCompleteDetailExist(mobileNumber))) {
+						return new ResponseEntity<>("Mobile number allready verified, please login now", HttpStatus.BAD_REQUEST);						
+					}else {
+						return new ResponseEntity<>("Mobile number allready verified, Please fill up all the details before login", HttpStatus.CONFLICT);
+					}
+				}
+			}
+		}
 		
 		if(StringUtils.isEmpty(requestOTPSystem.getOtp())){
 			return new ResponseEntity<>("Please provide OTP", HttpStatus.BAD_REQUEST);
@@ -67,7 +114,9 @@ public class OTPVerificationController {
 			if (otpSystem != null) {
 				if(otpSystem.getExpiryTime() >= System.currentTimeMillis()) {
 					if(requestOTPSystem.getOtp().equalsIgnoreCase(otpSystem.getOtp())) {
-						return new ResponseEntity<>("OTP is verified successfully", HttpStatus.OK);
+						int userInserted = userService.createUserInitially(mobileNumber);
+						System.out.println("user inserted: "+userInserted);
+						return new ResponseEntity<>("OTP verified successfully", HttpStatus.OK);
 					}
 					return new ResponseEntity<>("Invalid OTP", HttpStatus.BAD_REQUEST);
 				}
@@ -115,4 +164,5 @@ public class OTPVerificationController {
 		}
 		return new ResponseEntity<>("Email not found", HttpStatus.BAD_REQUEST);
 	}
+	
 }

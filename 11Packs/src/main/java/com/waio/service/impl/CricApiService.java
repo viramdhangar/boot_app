@@ -36,7 +36,7 @@ public class CricApiService implements ICricApiService {
 
 	@Override
 	public TeamSquad getSquad(String uniqueId, String API_KEY) {
-		final String uri = "https://cricapi.com/api/fantasySquad?apikey=VXGb0jCOh4SG9mOIEqa3qQqJbGO2&unique_id="+uniqueId+"";
+		final String uri = "https://cricapi.com/api/fantasySquad?apikey="+API_KEY+"&unique_id="+uniqueId+"";
 		RestTemplate restTemplate = new RestTemplate();
 		TeamSquad result = null;
 		try {
@@ -51,7 +51,7 @@ public class CricApiService implements ICricApiService {
 	
 	@Override
 	public PlayerDTO playerInfo(String id, String API_KEY) {
-		final String uri = "https://cricapi.com/api/playerStats?apikey=VXGb0jCOh4SG9mOIEqa3qQqJbGO2&pid="+id+"";
+		final String uri = "https://cricapi.com/api/playerStats?apikey="+API_KEY+"&pid="+id+"";
 		RestTemplate restTemplate = new RestTemplate();
 		try {
 			PlayerDTO result = restTemplate.getForObject(uri, PlayerDTO.class);
@@ -64,7 +64,7 @@ public class CricApiService implements ICricApiService {
 	
 	@Override
 	public FantacySummaryApi fantacySummaryApi(String id, String API_KEY) {
-		final String uri = "https://cricapi.com/api/fantasySummary?apikey=VXGb0jCOh4SG9mOIEqa3qQqJbGO2&unique_id="+id+"";
+		final String uri = "https://cricapi.com/api/fantasySummary?apikey="+API_KEY+"&unique_id="+id+"";
 		RestTemplate restTemplate = new RestTemplate();
 		try {
 			FantacySummaryApi result = restTemplate.getForObject(uri, FantacySummaryApi.class);

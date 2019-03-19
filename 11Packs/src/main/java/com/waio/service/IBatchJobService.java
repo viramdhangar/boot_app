@@ -5,9 +5,12 @@ package com.waio.service;
 
 import java.util.List;
 
+import com.waio.cricapi.MatchesDTO;
 import com.waio.cricapi.NewMatchesData;
+import com.waio.model.AccountDTO;
 import com.waio.model.LeagueDTO;
 import com.waio.model.PlayerDTO;
+import com.waio.model.WinningPriceDTO;
 /**
  * @author Viramm
  *
@@ -37,4 +40,12 @@ public interface IBatchJobService {
 	 * @throws Exception
 	 */
 	NewMatchesData updateMatchesStatus() throws Exception;
+	/**
+	 * @param matchesList
+	 */
+	void declareWinner(String matchId);
+	/**
+	 * @return
+	 */
+	int distributeWinnersWinning(String matchId);
 }

@@ -1,9 +1,0 @@
-<resources>
-
-    <string name="rupeeSign">r</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="multiple_winner">Multiple Winners</string>
-    <string name="single_winner">Single Winners</string>
-</resources>

@@ -32,4 +32,14 @@ public interface IUserService {
 	 * @return
 	 */
 	String userValidation(UserDTO userDTO);
+	/**
+	 * @param uniqueNumber
+	 * @return
+	 */
+	int createUserInitially(String uniqueNumber);
+	/**
+	 * @param username
+	 * @return
+	 */
+	String checkIfCompleteDetailExist(String username);
 }

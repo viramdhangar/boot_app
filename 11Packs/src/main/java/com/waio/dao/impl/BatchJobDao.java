@@ -1,5 +1,6 @@
 package com.waio.dao.impl;
 
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -9,6 +10,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -17,12 +19,14 @@ import org.springframework.stereotype.Repository;
 
 import com.waio.cricapi.MatchesDTO;
 import com.waio.dao.IBatchJobDao;
+import com.waio.model.AccountDTO;
 import com.waio.model.LeagueDTO;
 import com.waio.model.PlayerDTO;
 import com.waio.model.PlayerPointsDTO;
 import com.waio.model.PlayerScoreBean;
 import com.waio.model.PointSystemDTO;
 import com.waio.model.WinningBreakupDTO;
+import com.waio.model.WinningPriceDTO;
 
 @Repository("BatchJobDao")
 public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
@@ -38,7 +42,7 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 	@Override
 	public int insertMatches(final List<MatchesDTO> matchesList) {
 
-		String sql = "insert into matches (unique_id, date, datetime, team1, team2, type, squad, toss_winner_team, winner_team, matchStarted, match_status ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE matchStarted=?, winner_team=?, match_status=?";
+		String sql = "insert into matches (unique_id, date, datetime, team1, team2, type, squad, toss_winner_team, winner_team, matchStarted, match_status ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE team1=?, team2=?, matchStarted=?, winner_team=?, match_status=?";
 		for (MatchesDTO match : matchesList) {
 			getJdbcTemplate().update(sql, new Object[] { 
 					match.getUnique_id(), 
@@ -52,6 +56,8 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 					match.getWinner_team(), 
 					match.getMatchStarted(),
 					match.getMatchStatus(),
+					match.getTeam1(), 
+					match.getTeam2(), 
 					match.getMatchStarted(),
 					match.getWinner_team(),
 					match.getMatchStatus()
@@ -62,7 +68,7 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 
 	@Override
 	public int insertSquad(final String uniqueId, final List<PlayerDTO> playerList) {
-		String sql = "insert into match_squad (match_id, player_id, credit, team ) values (?, ?, ?, ?) ON DUPLICATE KEY update xi=?";		
+		String sql = "insert into match_squad (match_id, player_id, credit, team ) values (?, ?, ?, ?) ON DUPLICATE KEY update xi=?, team=?";		
 		
 		int[] insertedPlayers = getJdbcTemplate().batchUpdate(sql,
 	            new BatchPreparedStatementSetter() {
@@ -75,6 +81,7 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 	                    ps.setDouble(3, player.getCredit());
 	                    ps.setString(4, player.getPlayingTeamName());
 	                    ps.setString(5, player.getXi());
+	                    ps.setString(6, player.getPlayingTeamName());
 	                }
 
 	                @Override
@@ -329,4 +336,106 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 		});
 		return insertedScores.length;
 	}
+	@Override
+	public List<LeagueDTO> getEligibleLeaguesOfMatch(String matchId) {
+		String sql = "select * from match_leagues where match_id= ? and size=joined_team or (size/2 < joined_team and size > 10 and match_id= ?)";
+		List<LeagueDTO> leagues = getJdbcTemplate().query(sql, new Object[] { matchId, matchId }, new BeanPropertyRowMapper<LeagueDTO>(LeagueDTO.class));
+		return leagues;
+	}
+	
+	@Override
+	public int saveWinning(final List<WinningPriceDTO> winningList) {
+		String sql = "insert into winning (username,  league_id, match_id, team_id, team_rank, winningAmount) values (?, ?, ?, ?, ?, ?)"; // ON DUPLICATE KEY UPDATE points=?
+		int[] insertedRecords = getJdbcTemplate().batchUpdate(sql, new BatchPreparedStatementSetter() {
+			@Override
+			public void setValues(PreparedStatement ps, int i) throws SQLException {
+				WinningPriceDTO winningPriceDTO = winningList.get(i);
+				ps.setString(1, winningPriceDTO.getUserName());
+				ps.setString(2, winningPriceDTO.getLeagueId());
+				ps.setString(3, winningPriceDTO.getMatchId());
+				ps.setString(4, winningPriceDTO.getTeamId());
+				ps.setString(5, winningPriceDTO.getTeamRank());
+				ps.setBigDecimal(6, winningPriceDTO.getWinningAmount());
+			}
+			@Override
+			public int getBatchSize() {
+				return winningList.size();
+			}
+		});
+		return insertedRecords.length;
+	}
+	
+	@Override
+	public int distributeWinnersWinning(String matchId) {
+		String sql = "insert into account_transaction (username, status, created, created_id, deposited_amount, match_id, league_id, team_id) select username, 'WON', current_timestamp(), 'SystemJob', winningAmount, match_id, league_id, team_id from winning where to_wallet='N' and match_id=?"; 
+		int insertedRecords = getJdbcTemplate().update(sql, new Object[] {matchId});
+		return insertedRecords;
+	}
+	
+	@Override
+	public int distributeWinnersWinningInWallet(String matchId) {
+		
+		// insert winners winning in account transaction
+		int updatedAccountTransaction = distributeWinnersWinning(matchId);
+		System.out.println("updatedAccountTransaction table "+updatedAccountTransaction+" Fpr Match "+matchId);
+		
+		String sql = "select username, match_id, league_id, winningAmount, team_id from winning where to_wallet='N' and match_id=?"; 
+		List<WinningPriceDTO> winningList = getJdbcTemplate().query(sql, new Object[] {matchId}, new BeanPropertyRowMapper<WinningPriceDTO>(WinningPriceDTO.class));
+		System.out.println("total winning teams list winningList "+winningList.size());
+		
+		// update into account 
+		
+		String updateSql = "update account set winning = ?, amount=? where username=?";
+		for(WinningPriceDTO winning: winningList) {
+			// account select
+			String accountSql = "select amount, winning from account where username=?";
+			AccountDTO account = getJdbcTemplate().queryForObject(accountSql, new Object[] { winning.getUserName() }, new BeanPropertyRowMapper<AccountDTO>(AccountDTO.class));
+			System.out.println("total winning for user  "+winning.getUserName()+" is :"+account.getWinning()+" for user: "+winning.getUserName());
+			if(account.getAmount() == null) {
+				account.setAmount(new BigDecimal(0));
+			}
+			
+			if (account.getWinning() == null) {
+				int i = getJdbcTemplate().update(updateSql, winning.getWinningAmount(), account.getAmount().add(winning.getWinningAmount()), winning.getUserName());
+				if (i > 0) {
+					System.out.println("total existing winning was empty updated "+winning.getWinningAmount()+" amount for user :"+winning.getUserName());
+					int walletUpdated = updateToWallet(winning.getUserName(), winning.getMatchId(), winning.getLeagueId(), winning.getTeamId());
+					if(walletUpdated>0) {
+						System.out.println("wallet flag is updated for user: "+winning.getUserName()+", Match: "+winning.getMatchId()+", League: "+winning.getLeagueId()+", Team: "+winning.getTeamId());
+					}
+				}
+			} else {
+				int i = getJdbcTemplate().update(updateSql, winning.getWinningAmount().add(account.getWinning()), account.getAmount().add(winning.getWinningAmount()), winning.getUserName());
+				if (i > 0) {
+					System.out.println("total existing winning was "+account.getWinning()+" updated with"+winning.getWinningAmount()+" amount, Total winning is :"+winning.getWinningAmount().add(account.getWinning())+" for user "+winning.getUserName());
+					int walletUpdated = updateToWallet(winning.getUserName(), winning.getMatchId(), winning.getLeagueId(), winning.getTeamId());
+					if(walletUpdated>0) {
+						System.out.println("wallet flag is updated for user: "+winning.getUserName()+", Match: "+winning.getMatchId()+", League: "+winning.getLeagueId()+", Team: "+winning.getTeamId());
+					}
+				}
+			}
+		}
+		
+		// mark match is FINISHED
+		int matchClosed = finishMatch(matchId);
+		if(matchClosed > 0) {
+			System.out.println("::Match finished now::"+matchId);
+		}
+		
+		return winningList.size();
+	}
+	
+	@Override
+	public int updateToWallet(String username, String matchId, String leagueId, String teamId) {
+		String sql = "update winning set to_wallet='Y' where to_wallet='N' and username=? and match_id=? and league_id=? and team_id=? "; 
+		int insertedRecords = getJdbcTemplate().update(sql, new Object[] { username, matchId, leagueId, teamId });
+		return insertedRecords;
+	}
+	
+	private int finishMatch(String matchId) {
+		String sql = "update matches set is_active = 'FINISHED' where unique_id=?";
+		int insertedRecords = getJdbcTemplate().update(sql, new Object[] { matchId });
+		return insertedRecords;
+	}
+	
 }

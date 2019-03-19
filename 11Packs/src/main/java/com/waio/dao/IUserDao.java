@@ -33,4 +33,19 @@ public interface IUserDao {
 	 * @return
 	 */
 	int validateReferralCode(UserDTO userDTO);
+	/**
+	 * @param userDTO
+	 * @return
+	 */
+	int createUserInitially(UserDTO userDTO);
+	/**
+	 * @param username
+	 * @return
+	 */
+	String checkIfCompleteDetailExist(String username);
+	/**
+	 * @param userDTO
+	 * @return
+	 */
+	int validateDuplicateEmail(UserDTO userDTO); 
 }
