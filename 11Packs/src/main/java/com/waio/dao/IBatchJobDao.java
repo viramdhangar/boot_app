@@ -77,7 +77,7 @@ public interface IBatchJobDao {
 	 * @param playerPointsList
 	 * @return
 	 */
-	int insertPlayerPoints(final List<PlayerPointsDTO> playerPointsList);
+	int insertPlayerPoints(final List<PlayerPointsDTO> playerPointsList, String matchId);
 	/**
 	 * @param uniqueId
 	 * @param playerList

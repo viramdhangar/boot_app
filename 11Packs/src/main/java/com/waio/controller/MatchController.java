@@ -225,9 +225,14 @@ public class MatchController {
 	@GetMapping(value = "/v1/teamsRankAndPointsInLeague/{uniqueNumber}/{matchId}/{leagueId}")
 	public List<TeamRankPoints> getTeamsRankAndPoints(@PathVariable String uniqueNumber, @PathVariable String matchId,
 			@PathVariable String leagueId) {
-		List<TeamRankPoints> rankPoints = new ArrayList<TeamRankPoints>();
-		rankPoints = matchService.getTeamsRankAndPoints(uniqueNumber, matchId, leagueId);
-		return rankPoints;
+		try {
+			List<TeamRankPoints> rankPoints = new ArrayList<TeamRankPoints>();
+			rankPoints = matchService.getTeamsRankAndPoints(uniqueNumber, matchId, leagueId);
+			return rankPoints;
+		} catch (Exception e) {
+			System.out.println(e);
+			return null;
+		}
 	}
 	
 	@GetMapping(value = "/v1/teamDetailWithPoints/{matchId}/{teamId}")

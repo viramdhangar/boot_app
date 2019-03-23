@@ -2,18 +2,19 @@ package com.waio.paytm.pg.checksumKit;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.paytm.pg.merchant.CheckSumServiceHelper;
+import org.springframework.stereotype.Service;
 
+import com.paytm.merchant.CheckSumServiceHelper;
+import com.waio.util.PaytmConstants;
 
-public class checksumVerification {
+@Service("ChecksumVerification")
+public class ChecksumVerification {
 	
-	private static String MercahntKey = "XXXXXXXXXXX";
+	private static String MercahntKey = PaytmConstants.STG_MERCHANT;
 	
-	public static void main(String[] a){
+	public boolean verifyCheckSum(Map<String, String> mapData){
 		
 		String paytmChecksum = "";
-		
-		Map<String, String> mapData = new  TreeMap<String,String>();
 		
 		TreeMap<String, String> paytmParams = new  TreeMap<String,String>();
 		
@@ -38,10 +39,9 @@ public class checksumVerification {
 			// if transaction is successful 
 			// kindly call Paytm Transaction Status API and verify the transaction amount and status.
 			// If everything is fine then mark that transaction as successful into your DB.
-			
-			
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		return isValideChecksum;
 	}
 }

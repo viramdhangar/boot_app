@@ -469,6 +469,17 @@ public class MatchService implements IMatchService{
 	 */
 	private void playersShortName(List<MatchTeamBean> matchTeamBeanList) {
 		for(MatchTeamBean matchBean : matchTeamBeanList) {
+			// assign captain and viceCaptain points
+			/*if (matchBean.isCaptain()) {
+				if (StringUtils.isNotEmpty(matchBean.getPoints())) {
+					matchBean.setPoints(String.valueOf(Integer.parseInt(matchBean.getPoints()) * 2));
+				}
+			}
+			if(matchBean.isViceCaptain()) {
+				if (StringUtils.isNotEmpty(matchBean.getPoints())) {
+					matchBean.setPoints(String.valueOf(Integer.parseInt(matchBean.getPoints()) * 1.5));
+				}				
+			}*/
 			String[] str = matchBean.getName().split(" ");
 			int totalWords = str.length;
 			if(totalWords > 1) {

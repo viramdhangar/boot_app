@@ -318,7 +318,7 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 	}
 	
 	@Override
-	public int insertPlayerPoints(final List<PlayerPointsDTO> playerPointsList) {
+	public int insertPlayerPoints(final List<PlayerPointsDTO> playerPointsList, String matchId) {
 		String sql = "insert into player_points (player_id, Match_id, points) values (?, ?, ?) ON DUPLICATE KEY UPDATE points=?";
 		int[] insertedScores = getJdbcTemplate().batchUpdate(sql, new BatchPreparedStatementSetter() {
 			@Override
@@ -334,8 +334,44 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 				return playerPointsList.size();
 			}
 		});
+		
+		// update team player points
+		System.out.println("updated records in player_points: "+insertedScores.length);
+				
+		// update team player points
+		int i = updateTeamPlayerPoints(playerPointsList, matchId);
+		System.out.println("updated records in team_player: "+i);
+		
 		return insertedScores.length;
 	}
+	
+	//@Override
+	public int updateTeamPlayerPoints(final List<PlayerPointsDTO> playerPointsList, String matchId) {
+		String sql = "update team_player set points=? where player_id=? and team_id in (select id from team where match_id = ?)";
+		int[] insertedScores = getJdbcTemplate().batchUpdate(sql, new BatchPreparedStatementSetter() {
+			@Override
+			public void setValues(PreparedStatement ps, int i) throws SQLException {
+				PlayerPointsDTO playerPoints = playerPointsList.get(i);
+				ps.setDouble(1, playerPoints.getPoints());
+				ps.setString(2, playerPoints.getPlayerId());
+				ps.setString(3, playerPoints.getMatchId());
+			}
+			@Override
+			public int getBatchSize() {
+				return playerPointsList.size();
+			}
+		});
+		if(matchId.equalsIgnoreCase("1175356")) {
+			System.out.println(matchId);
+		}
+		// update captain vice captain
+		String captainSql = "update team_player set points=points*2 where captain ='true' and team_id in (select id from team where match_id = ?)";
+		getJdbcTemplate().update(captainSql, matchId);
+		String viceCaptainSql = "update team_player set points=points*1.5 where vice_captain='true' and team_id in (select id from team where match_id = ?)";
+		getJdbcTemplate().update(viceCaptainSql, matchId);
+		return insertedScores.length;
+	}
+	
 	@Override
 	public List<LeagueDTO> getEligibleLeaguesOfMatch(String matchId) {
 		String sql = "select * from match_leagues where match_id= ? and size=joined_team or (size/2 < joined_team and size > 10 and match_id= ?)";

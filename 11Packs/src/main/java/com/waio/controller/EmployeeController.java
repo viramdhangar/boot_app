@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,7 +25,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.waio.model.Employee;
 import com.waio.service.IEmployeeService;
 
-@RestController
+@Controller
 public class EmployeeController {
 
 	@Autowired
@@ -42,6 +43,11 @@ public class EmployeeController {
 	@RequestMapping(value="/registration")
 	public ModelAndView registration() {
 		return new ModelAndView("registration");
+	}
+	
+	@RequestMapping(value="/payumoney")
+	public ModelAndView payumoney() {
+		return new ModelAndView("payumoney");
 	}
 	
 	@RequestMapping(value="/user")

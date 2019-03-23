@@ -405,7 +405,7 @@ public class BatchJobService implements IBatchJobService{
 	public int updateScoreAndCreatePoints(List<PlayerDTO> playerList, String matchId) {
 		List<PlayerPointsDTO> playerPointList = calculatePlayerPoints(playerList, matchId);
 		// insert points
-		int insertedPoints = batchJobDao.insertPlayerPoints(playerPointList);
+		int insertedPoints = batchJobDao.insertPlayerPoints(playerPointList, matchId);
 		return insertedPoints;
 	}
 	

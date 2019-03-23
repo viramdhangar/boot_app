@@ -16,6 +16,19 @@ public class MatchTeam {
 	private String matchId;
 	private String uniqueNumber;
 	private String username;
+	private String firstName;
+	/**
+	 * @return the firstName
+	 */
+	public String getFirstName() {
+		return firstName;
+	}
+	/**
+	 * @param firstName the firstName to set
+	 */
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
 	/**
 	 * @return the username
 	 */
