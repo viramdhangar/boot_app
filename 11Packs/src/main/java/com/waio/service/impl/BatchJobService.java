@@ -36,6 +36,8 @@ import com.waio.cricapi.Team;
 import com.waio.cricapi.TeamSquad;
 import com.waio.dao.IBatchJobDao;
 import com.waio.dao.IMatchDao;
+import com.waio.model.AccountDTO;
+import com.waio.model.CancelLeague;
 import com.waio.model.LeagueDTO;
 import com.waio.model.PlayerDTO;
 import com.waio.model.PlayerPointsDTO;
@@ -589,22 +591,58 @@ public class BatchJobService implements IBatchJobService{
 			List<TeamRankPoints> trpList = null;
 
 			Map<Integer, BigDecimal> breakUpMap = new HashMap<>();
-			for (WinningBreakupDTO wb : wbList) {
-				String rank = wb.getPrizeRank();
-				String[] rankArray = rank.split("-");
-				if (rankArray.length == 1) {
-					int firstValue = Integer.parseInt(rankArray[0]);
-					breakUpMap.put(firstValue, wb.getPrizeMoney());
+			
+			LeagueDTO leagueDTO = matchDao.getLeague(league.getId());
+			if(league.getSize() != league.getJoinedTeam() && (league.getSize()/2) < league.getJoinedTeam()) {
+				
+				if(league.getSize() > 10) {
+					BigDecimal divideValue = new BigDecimal(0);
+					if(league.getJoinedTeam() < (league.getSize()/1.5) &&  league.getJoinedTeam() > (league.getSize()/2)) {
+						divideValue = new BigDecimal(2);
+					}else if(league.getJoinedTeam() < (league.getSize()/1.2) &&  league.getJoinedTeam() >= (league.getSize()/1.5)) {
+						divideValue = new BigDecimal(1.4);
+					} else if (league.getJoinedTeam() < (league.getSize()/1.02) &&  league.getJoinedTeam() >= (league.getSize()/1.2)) {
+						divideValue = new BigDecimal(1.2);
+					}
+					
+					for (WinningBreakupDTO wb : wbList) {				
+						String rank = wb.getPrizeRank();
+						String[] rankArray = rank.split("-");
+						if (rankArray.length == 1) {
+							int firstValue = Integer.parseInt(rankArray[0]);
+							breakUpMap.put(firstValue, wb.getPrizeMoney().divide(divideValue));
+						}
+						if (rankArray.length == 2) {
+							int firstValue = Integer.parseInt(rankArray[0]);
+							int secondValue = Integer.parseInt(rankArray[1]);
+							for (int i = firstValue; i <= secondValue; i++) {
+								breakUpMap.put(i, wb.getPrizeMoney().divide(divideValue));
+							}
+						}
+					}	
+					
+				}else {
+					int winningAmount = (leagueDTO.getEntryFee() * leagueDTO.getJoinedTeam()) - (((leagueDTO.getEntryFee() * leagueDTO.getJoinedTeam()) / 100) * 17);
+					BigDecimal bd = new BigDecimal(winningAmount);
+					breakUpMap.put(1, bd);
 				}
-				if (rankArray.length == 2) {
-					int firstValue = Integer.parseInt(rankArray[0]);
-					int secondValue = Integer.parseInt(rankArray[1]);
-					for (int i = firstValue; i <= secondValue; i++) {
-						breakUpMap.put(i, wb.getPrizeMoney());
+			}else if(league.getSize() == league.getJoinedTeam()){
+				for (WinningBreakupDTO wb : wbList) {				
+					String rank = wb.getPrizeRank();
+					String[] rankArray = rank.split("-");
+					if (rankArray.length == 1) {
+						int firstValue = Integer.parseInt(rankArray[0]);
+						breakUpMap.put(firstValue, wb.getPrizeMoney());
+					}
+					if (rankArray.length == 2) {
+						int firstValue = Integer.parseInt(rankArray[0]);
+						int secondValue = Integer.parseInt(rankArray[1]);
+						for (int i = firstValue; i <= secondValue; i++) {
+							breakUpMap.put(i, wb.getPrizeMoney());
+						}
 					}
 				}
 			}
-			
 			if (CollectionUtils.isNotEmpty(wbList)) {
 				List<TeamRankPoints> teamRank = matchDao.getTeamsRankAndPoints(league.getMatchId(), league.getId());
 
@@ -665,5 +703,29 @@ public class BatchJobService implements IBatchJobService{
 			System.out.println("inserted " + insertedRecords + " records for match in winning: " + matchId);
 		}
 		return insertedRecords;
+	}
+	
+	@Override
+	public void cancelAmount(String matchId) {
+		List<CancelLeague> leagueList = batchJobDao.getCanceledLeagues(matchId);
+		AccountDTO accountDTO = null;
+		for(CancelLeague cl : leagueList) {
+			int i = batchJobDao.insertAccountTransactionForCanceled(cl);
+			if(i > 0) {
+				System.out.println("canceled amount added to transaction table for "+cl.getCreatedId());
+			}
+			accountDTO = matchDao.account(cl.getCreatedId());
+			
+			if(accountDTO.getDepositedAmount()!=null) {
+				accountDTO.setDepositedAmount(accountDTO.getDepositedAmount().add(new BigDecimal(Integer.parseInt(cl.getEntryFee()))));				
+			}else {
+				accountDTO.setDepositedAmount(new BigDecimal(Integer.parseInt(cl.getEntryFee())));
+			}
+			accountDTO.setUsername(cl.getCreatedId());
+			int j = batchJobDao.updateAccount(accountDTO);
+			if(j > 0) {
+				System.out.println("canceled amount added to account table for "+cl.getCreatedId());
+			}
+		}	
 	}
 }

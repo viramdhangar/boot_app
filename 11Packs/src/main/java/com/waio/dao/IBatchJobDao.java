@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.waio.cricapi.MatchesDTO;
 import com.waio.model.AccountDTO;
+import com.waio.model.CancelLeague;
 import com.waio.model.LeagueDTO;
 import com.waio.model.PlayerDTO;
 import com.waio.model.PlayerPointsDTO;
@@ -94,10 +95,10 @@ public interface IBatchJobDao {
 	 */
 	int saveWinning(final List<WinningPriceDTO> winningList);
 	/**
-	 * * @param matchId
+	 * * @param WinningPriceDTO
 	 * @return
 	 */
-	int distributeWinnersWinning(String matchId);
+	int distributeWinnersWinning(WinningPriceDTO winnerDTO);
 	/**
 	 * @param matchId
 	 * @return
@@ -108,4 +109,19 @@ public interface IBatchJobDao {
 	 * @return
 	 */
 	int distributeWinnersWinningInWallet(String matchId);
+	/**
+	 * @param matchId
+	 * @return
+	 */
+	List<CancelLeague> getCanceledLeagues(String matchId);
+	/**
+	 * @param cancelLeague
+	 * @return
+	 */
+	int insertAccountTransactionForCanceled(CancelLeague cancelLeague);
+	/**
+	 * @param accountDTO
+	 * @return
+	 */
+	int updateAccount(AccountDTO accountDTO);
 }

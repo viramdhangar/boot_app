@@ -5,6 +5,7 @@ package com.waio.dao;
 
 import java.util.List;
 
+import com.waio.model.AppDetail;
 import com.waio.model.UserDTO;
 
 /**
@@ -48,4 +49,8 @@ public interface IUserDao {
 	 * @return
 	 */
 	int validateDuplicateEmail(UserDTO userDTO); 
+	/**
+	 * @return
+	 */
+	AppDetail appDetail();
 }

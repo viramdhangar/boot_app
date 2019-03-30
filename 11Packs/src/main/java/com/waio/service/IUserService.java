@@ -3,6 +3,7 @@
  */
 package com.waio.service;
 
+import com.waio.model.AppDetail;
 import com.waio.model.UserDTO;
 
 /**
@@ -42,4 +43,8 @@ public interface IUserService {
 	 * @return
 	 */
 	String checkIfCompleteDetailExist(String username);
+	/**
+	 * @return
+	 */
+	AppDetail appDetail();
 }

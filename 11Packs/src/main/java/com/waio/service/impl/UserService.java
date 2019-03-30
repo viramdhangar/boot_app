@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.waio.dao.IUserDao;
+import com.waio.model.AppDetail;
 import com.waio.model.UserDTO;
 import com.waio.service.IUserService;
 
@@ -115,5 +116,10 @@ public class UserService implements IUserService {
 	@Override
 	public String checkIfCompleteDetailExist(String username) {
 		return userDao.checkIfCompleteDetailExist(username);
+	}
+	
+	@Override
+	public AppDetail appDetail() {
+		return userDao.appDetail();
 	}
 }

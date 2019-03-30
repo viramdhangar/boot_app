@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.waio.exceptions.BadRequestException;
 import com.waio.exceptions.ResourceNotFoundException;
+import com.waio.model.AppDetail;
 import com.waio.model.UserDTO;
 import com.waio.service.impl.UserService;
 
@@ -107,5 +108,10 @@ public class IdentityController {
 	public String logout(HttpServletRequest request, HttpSession session) {	
 		session.invalidate();
 		return "Logout Successfully";
+	}
+	
+	@GetMapping(value = "/app/version")
+	public AppDetail appVersion() {
+		return userService.appDetail();
 	}
 }

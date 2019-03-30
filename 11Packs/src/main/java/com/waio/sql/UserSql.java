@@ -21,4 +21,5 @@ public class UserSql {
 	public static final String INSERT_REFERRED_USER_CODE_SQL = "insert into referred_user (referral_code, username) values (?, ?)";
 	public static final String VALIDATE_REFERRAL_CODE_SQL = "select count(referral_code) from users where referral_code=?";
 	public static final String VALIDATE_USER_DETAIL_SQL = "select referral_code from users where username=?";
+	public static final String MY_APP_SQL = "select app_name latestAppName, app_version latestAppVersion, app_update latestAppUpdate from myapp";
 }

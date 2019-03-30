@@ -20,6 +20,7 @@ import org.springframework.stereotype.Repository;
 import com.waio.cricapi.MatchesDTO;
 import com.waio.dao.IBatchJobDao;
 import com.waio.model.AccountDTO;
+import com.waio.model.CancelLeague;
 import com.waio.model.LeagueDTO;
 import com.waio.model.PlayerDTO;
 import com.waio.model.PlayerPointsDTO;
@@ -369,13 +370,17 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 		getJdbcTemplate().update(captainSql, matchId);
 		String viceCaptainSql = "update team_player set points=points*1.5 where vice_captain='true' and team_id in (select id from team where match_id = ?)";
 		getJdbcTemplate().update(viceCaptainSql, matchId);
+		
+		// mark cancel incompleted leagues
+		markIncompleteLeagueAsCanceled(matchId);
+		
 		return insertedScores.length;
 	}
 	
 	@Override
 	public List<LeagueDTO> getEligibleLeaguesOfMatch(String matchId) {
-		String sql = "select * from match_leagues where match_id= ? and size=joined_team or (size/2 < joined_team and size > 10 and match_id= ?)";
-		List<LeagueDTO> leagues = getJdbcTemplate().query(sql, new Object[] { matchId, matchId }, new BeanPropertyRowMapper<LeagueDTO>(LeagueDTO.class));
+		String sql = "select * from match_leagues where match_id= ? and (size/2) < joined_team";
+		List<LeagueDTO> leagues = getJdbcTemplate().query(sql, new Object[] { matchId }, new BeanPropertyRowMapper<LeagueDTO>(LeagueDTO.class));
 		return leagues;
 	}
 	
@@ -401,53 +406,53 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 		return insertedRecords.length;
 	}
 	
-	@Override
-	public int distributeWinnersWinning(String matchId) {
-		String sql = "insert into account_transaction (username, status, created, created_id, deposited_amount, match_id, league_id, team_id) select username, 'WON', current_timestamp(), 'SystemJob', winningAmount, match_id, league_id, team_id from winning where to_wallet='N' and match_id=?"; 
-		int insertedRecords = getJdbcTemplate().update(sql, new Object[] {matchId});
+	//@Override
+	public int distributeWinnersWinning(WinningPriceDTO winnerDTO) {
+		String sql = "insert into account_transaction (username, status, created, created_id, deposited_amount, match_id, league_id, team_id) values (?, 'WON', current_timestamp(), 'SystemJob', ?, ?, ?, ?)"; 
+		int insertedRecords = getJdbcTemplate().update(sql, new Object[] {
+				winnerDTO.getUserName(),
+				winnerDTO.getWinningAmount(),
+				winnerDTO.getMatchId(),
+				winnerDTO.getLeagueId(),
+				winnerDTO.getTeamId()
+		});
 		return insertedRecords;
 	}
 	
 	@Override
 	public int distributeWinnersWinningInWallet(String matchId) {
 		
-		// insert winners winning in account transaction
-		int updatedAccountTransaction = distributeWinnersWinning(matchId);
-		System.out.println("updatedAccountTransaction table "+updatedAccountTransaction+" Fpr Match "+matchId);
-		
+		// get all declared winners
 		String sql = "select username, match_id, league_id, winningAmount, team_id from winning where to_wallet='N' and match_id=?"; 
 		List<WinningPriceDTO> winningList = getJdbcTemplate().query(sql, new Object[] {matchId}, new BeanPropertyRowMapper<WinningPriceDTO>(WinningPriceDTO.class));
 		System.out.println("total winning teams list winningList "+winningList.size());
 		
-		// update into account 
-		
-		String updateSql = "update account set winning = ?, amount=? where username=?";
 		for(WinningPriceDTO winning: winningList) {
-			// account select
-			String accountSql = "select amount, winning from account where username=?";
+			// get existing account detail of user
+			String accountSql = "select deposited_amount from account where username=?";
 			AccountDTO account = getJdbcTemplate().queryForObject(accountSql, new Object[] { winning.getUserName() }, new BeanPropertyRowMapper<AccountDTO>(AccountDTO.class));
-			System.out.println("total winning for user  "+winning.getUserName()+" is :"+account.getWinning()+" for user: "+winning.getUserName());
-			if(account.getAmount() == null) {
-				account.setAmount(new BigDecimal(0));
+			System.out.println("total winning for user  "+winning.getUserName()+" is :"+winning.getWinningAmount()+" in league: "+winning.getLeagueId()+" in match: "+winning.getMatchId());
+						
+			if(account.getDepositedAmount() == null) {
+				account.setDepositedAmount(new BigDecimal(0));
 			}
 			
-			if (account.getWinning() == null) {
-				int i = getJdbcTemplate().update(updateSql, winning.getWinningAmount(), account.getAmount().add(winning.getWinningAmount()), winning.getUserName());
-				if (i > 0) {
-					System.out.println("total existing winning was empty updated "+winning.getWinningAmount()+" amount for user :"+winning.getUserName());
-					int walletUpdated = updateToWallet(winning.getUserName(), winning.getMatchId(), winning.getLeagueId(), winning.getTeamId());
-					if(walletUpdated>0) {
-						System.out.println("wallet flag is updated for user: "+winning.getUserName()+", Match: "+winning.getMatchId()+", League: "+winning.getLeagueId()+", Team: "+winning.getTeamId());
-					}
-				}
-			} else {
-				int i = getJdbcTemplate().update(updateSql, winning.getWinningAmount().add(account.getWinning()), account.getAmount().add(winning.getWinningAmount()), winning.getUserName());
-				if (i > 0) {
-					System.out.println("total existing winning was "+account.getWinning()+" updated with"+winning.getWinningAmount()+" amount, Total winning is :"+winning.getWinningAmount().add(account.getWinning())+" for user "+winning.getUserName());
-					int walletUpdated = updateToWallet(winning.getUserName(), winning.getMatchId(), winning.getLeagueId(), winning.getTeamId());
-					if(walletUpdated>0) {
-						System.out.println("wallet flag is updated for user: "+winning.getUserName()+", Match: "+winning.getMatchId()+", League: "+winning.getLeagueId()+", Team: "+winning.getTeamId());
-					}
+			if(winning.getWinningAmount() == null) {
+				winning.setWinningAmount(new BigDecimal(0));
+			}
+			
+			// insert winners winning in account transaction
+			int updatedAccountTransaction = distributeWinnersWinning(winning);
+			System.out.println("updatedAccountTransaction table "+updatedAccountTransaction+" rows inserted for "+winning.getUserName()+" For Match "+matchId+" and league: "+winning.getLeagueId());
+			
+			// update account balance in account table
+			String updateSql = "update account set deposited_amount=?, updated= current_timestamp(), updatedid='SystemJob' where username=?";
+			int i = getJdbcTemplate().update(updateSql, account.getDepositedAmount().add(winning.getWinningAmount()), winning.getUserName());
+			if (i > 0) {
+				System.out.println("updated with"+winning.getWinningAmount()+" amount, Total amount is :"+winning.getWinningAmount().add(account.getDepositedAmount())+" for user "+winning.getUserName());
+				int walletUpdated = updateToWallet(winning.getUserName(), winning.getMatchId(), winning.getLeagueId(), winning.getTeamId());
+				if(walletUpdated>0) {
+					System.out.println("wallet flag is updated for user: "+winning.getUserName()+", Match: "+winning.getMatchId()+", League: "+winning.getLeagueId()+", Team: "+winning.getTeamId());
 				}
 			}
 		}
@@ -457,7 +462,6 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 		if(matchClosed > 0) {
 			System.out.println("::Match finished now::"+matchId);
 		}
-		
 		return winningList.size();
 	}
 	
@@ -473,5 +477,58 @@ public class BatchJobDao extends JdbcDaoSupport implements IBatchJobDao{
 		int insertedRecords = getJdbcTemplate().update(sql, new Object[] { matchId });
 		return insertedRecords;
 	}
+
+	// get leagues to cancel
+	public List<LeagueDTO> markIncompleteLeagueAsCanceled(String matchId) {
+		// leagues which are not field even half
+		String sql="select match_leagues.* from match_leagues, matches where match_leagues.match_id=? and (match_leagues.size/2) > match_leagues.joined_team and match_leagues.match_id = matches.unique_id and matches.datetime < current_timestamp()";
+		final List<LeagueDTO> leagues = getJdbcTemplate().query(sql, new Object[] { matchId }, new BeanPropertyRowMapper<LeagueDTO>(LeagueDTO.class));
+		if(leagues.size()<1) {
+			return leagues;
+		}
+		System.out.println("Got leagues to cancel :: "+leagues.size());
+		
+		
+		// update leagues status as canceled
+		String updateCanceled = "update match_leagues set status='CANCELED' where id=?";
+		int[] updatedRecords = getJdbcTemplate().batchUpdate(updateCanceled, new BatchPreparedStatementSetter() {
+			@Override
+			public void setValues(PreparedStatement ps, int i) throws SQLException {
+				LeagueDTO league = leagues.get(i);
+				ps.setString(1, league.getId());
+			}
+			@Override
+			public int getBatchSize() {
+				return leagues.size();
+			}
+		});
+		System.out.println("marked leagues as canceled :: "+updatedRecords.length);
+		return leagues;
+	}
 	
+	@Override
+	public List<CancelLeague> getCanceledLeagues(String matchId) {
+		String sql = "select league.id, league.entry_fee, lt.created_id, ml.match_id, lt.team_id  from match_leagues ml, league_teams lt, league  where ml.id = lt.league_id and ml.league_id=league.id and  ml.match_id=? and ml.status='CANCELED'";
+		return getJdbcTemplate().query(sql, new Object[] { matchId }, new BeanPropertyRowMapper<CancelLeague>(CancelLeague.class));
+	}
+	
+	@Override
+	public int insertAccountTransactionForCanceled(CancelLeague cancelLeague) {
+		String sql ="insert into account_transaction (username, deposited_amount, status, created,  created_id, match_id, league_id) values (?, ?, 'CANCEL_REFUND', current_timestamp(), 'Striker11', ?, ?)";
+		return getJdbcTemplate().update(sql, new Object[] {
+				cancelLeague.getCreatedId(),
+				new BigDecimal(Integer.parseInt(cancelLeague.getEntryFee())),
+				cancelLeague.getMatchId(),
+				cancelLeague.getId()
+		});
+	}
+	
+	@Override
+	public int updateAccount(AccountDTO accountDTO) {
+		String sql = "update account set deposited_amount = ?, updated=current_timestamp(), updatedid='Striker11' where username=?";
+		return getJdbcTemplate().update(sql, new Object[] {
+				accountDTO.getDepositedAmount(),
+				accountDTO.getUsername()
+		});
+	}
 }

@@ -195,7 +195,7 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 	
 	@Override
 	public MatchesDTO getMatchLiveStatus (String matchId) {
-		String sql = "select * from matches where unique_id=?";
+		String sql = "select * from matches where datetime > current_timestamp() and unique_id=?";
 		return getJdbcTemplate().queryForObject(sql, new Object[] { matchId }, new BeanPropertyRowMapper<MatchesDTO>(MatchesDTO.class));
 	}
 	
@@ -276,7 +276,7 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 			
 			// update account wallet
 			accountDTO.setStatus("Debit");
-			addBalance(accountDTO, true);
+			addBalance(accountDTO, true, entryFee);
 			
 			return "League joined successfully, please join other league now.";
 		} else {
@@ -337,7 +337,7 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 	
 	@Override
 	public AccountDTO account(String userName) {
-		String sql = "select username, amount, deposited_amount, bonus_amount, winning from account where username=?";
+		String sql = "select username, deposited_amount, bonus_amount from account where username=?";
 		AccountDTO dto = new AccountDTO();
 		try {
 		List<AccountDTO> accountList = getJdbcTemplate().query(sql, new Object[] { userName },
@@ -352,33 +352,25 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 	}
 	
 	@Override
-	public AccountDTO addBalance(AccountDTO account, boolean debit) {
+	public AccountDTO addBalance(AccountDTO account, boolean debit, BigDecimal entryFee) {
 		// add transaction
 		AccountDTO acc = new AccountDTO();
-		
-		AccountDTO existing  = account(account.getUsername());
-		if(existing!=null && debit==false) {
-			if(existing.getDepositedAmount()!=null ) {
-				account.setDepositedAmount(account.getDepositedAmount().add(existing.getDepositedAmount()));
-			}
-			if(existing.getBonusAmount()!=null ) {
-				account.setBonusAmount(account.getBonusAmount().add(existing.getBonusAmount()));
-			}	
-		}
 		try {
-			if (addTransaction(account) > 0) {
-				String sql = "insert into account ( username, amount, deposited_amount, bonus_amount, updated) values (?, ?, ?, ?, current_date()) ON DUPLICATE KEY UPDATE  amount = ?, deposited_amount = ?, bonus_amount = ?, updated=current_date() ";
-				BigDecimal bd = null;
-				if(account.getBonusAmount() !=null) {
-					bd = account.getDepositedAmount().add(account.getBonusAmount());
-				}else {
-					bd = account.getDepositedAmount();
+			if (addTransaction(account, entryFee) > 0) {
+				if (entryFee == null && account.getStatus().equalsIgnoreCase("Credit")) {
+					AccountDTO existingUser = account(account.getUsername());
+					if (existingUser != null && existingUser.getDepositedAmount() != null) {
+						account.setDepositedAmount(account.getDepositedAmount().add(existingUser.getDepositedAmount()));
+					}
+					if (existingUser != null && existingUser.getBonusAmount() != null) {
+						account.setBonusAmount(account.getBonusAmount().add(existingUser.getBonusAmount()));
+					}
 				}
-				
+				String sql = "insert into account ( username, deposited_amount, bonus_amount, updated, updatedid) values (?, ?, ?, current_timestamp(), ?) ON DUPLICATE KEY UPDATE deposited_amount = ?, bonus_amount = ?, updated=current_timestamp(), updatedid=? ";
 				int i = getJdbcTemplate().update(sql,
-						new Object[] { account.getUsername(),
-								bd,
-								account.getDepositedAmount(), account.getBonusAmount(), bd, account.getDepositedAmount(), account.getBonusAmount() });
+						new Object[] { account.getUsername(), account.getDepositedAmount(), account.getBonusAmount(),
+								account.getUsername(), account.getDepositedAmount(), account.getBonusAmount(),
+								account.getUsername() });
 				if (i > 0) {
 					acc = account(account.getUsername());
 				} else {
@@ -391,11 +383,20 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 		return acc;
 	}
 
-	private int addTransaction(AccountDTO account) {
-		String sql = "insert into account_transaction ( username, deposited_amount, bonus_amount, promotion, status, created,  created_id) values (?, ?, ?, ?, ?, current_timestamp(), ?)";
+	private int addTransaction(AccountDTO account, BigDecimal entryFee) {
+		BigDecimal dA= new BigDecimal(0);
+		BigDecimal bA= new BigDecimal(0);
+		if (entryFee != null) {
+			dA = entryFee;
+			bA = account.getBonusAmount();
+		} else {
+			dA = account.getDepositedAmount();
+			bA = account.getBonusAmount();
+		}
+		String sql = "insert into account_transaction ( username, deposited_amount, bonus_amount, promotion, status, created,  created_id, id) values (?, ?, ?, ?, ?, current_timestamp(), ?, ?)";
 		try {
-			int i = getJdbcTemplate().update(sql, new Object[] { account.getUsername(), account.getDepositedAmount(),
-					account.getBonusAmount(), account.getPromotion(), account.getStatus(), account.getUsername() });
+			int i = getJdbcTemplate().update(sql, new Object[] { account.getUsername(), dA,
+					bA, account.getPromotion(), account.getStatus(), account.getUsername(), account.getId()});
 			return i;
 		} catch (Exception e) {
 			return 0;
@@ -424,5 +425,39 @@ public class MatchDao extends AbstractDaoSupport implements IMatchDao {
 	public List<PointSystemDTO> getFantasyPoints(){
 		String sql = "select * from point_system order by point_type asc, type";
 		return getJdbcTemplate().query(sql, new Object [] {}, new BeanPropertyRowMapper<PointSystemDTO>(PointSystemDTO.class));
+	}
+	
+	@Override
+	public int transactionHistory(AccountDTO account) {
+		String sql = "insert into transaction_history ( id, title, status, link, product, seller, currency, amount, name, email, phone, payout, fees, total_taxes, instrument_type, billing_instrument, failure, created_at, updated_at, tax_invoice_id, resource_uri, username) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		try {
+			int i = getJdbcTemplate().update(sql, new Object[] { 
+					account.getId(),
+					account.getTitle(),
+					account.getStatus(),
+					account.getLink(),
+					account.getProduct(),
+					account.getSeller(),
+					account.getCurrency(),
+					account.getAmount(),
+					account.getName(),
+					account.getEmail(),
+					account.getPhone(),
+					account.getPayout(),
+					account.getFees(),
+					account.getTotal_taxes(),
+					account.getInstrument_type(),
+					account.getBilling_instrument(),
+					account.getFailure(),
+					account.getCreated_at(),
+					account.getUpdated_at(),
+					account.getTax_invoice_id(),
+					account.getResource_uri(),
+					account.getUsername()
+			});
+			return i;
+		} catch (Exception e) {
+			return 0;
+		}
 	}
 }

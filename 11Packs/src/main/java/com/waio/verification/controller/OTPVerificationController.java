@@ -18,12 +18,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.twilio.Twilio;
-import com.twilio.rest.api.v2010.account.Message;
-import com.twilio.type.PhoneNumber;
-import com.waio.dao.IUserDao;
 import com.waio.email.api.IEmailService;
 import com.waio.email.api.MailResponse;
 import com.waio.model.UserDTO;
+import com.waio.service.IFast2sms;
 import com.waio.service.IUserService;
 import com.waio.verification.model.OTPSystem;
 
@@ -40,6 +38,9 @@ public class OTPVerificationController {
 	@Autowired
 	IEmailService emailService;
 
+	@Autowired
+	IFast2sms fast2sms;
+	
 	@Autowired
 	private IUserService userService;
 	
@@ -73,17 +74,19 @@ public class OTPVerificationController {
 		if(otpData.containsKey(mobileNumber)) {
 			OTPSystem otpSystemExisting = otpData.get(mobileNumber);
 			if(otpSystemExisting.getExpiryTime() >= System.currentTimeMillis()) {
-				return new ResponseEntity<>("OTP is already sent, resend OTP after 5 minute", HttpStatus.BAD_REQUEST);
+				return new ResponseEntity<>("OTP is already sent, resend OTP after 3 minute", HttpStatus.BAD_REQUEST);
 			}
 		}
 		
 		OTPSystem otpSystem = new OTPSystem();
 		otpSystem.setMobileNumber(mobileNumber);
 		otpSystem.setOtp(String.valueOf(((int)(Math.random()*(10000 - 1000))) + 1000));
-		otpSystem.setExpiryTime(System.currentTimeMillis() + 300000);
+		otpSystem.setExpiryTime(System.currentTimeMillis() + 180000);
 		otpData.put(mobileNumber, otpSystem);
-		Message.creator(new PhoneNumber("+91"+mobileNumber+""), new PhoneNumber("+13342316476"), "Your OTP is "+otpSystem.getOtp()+" Please use this OTP to verify your mobile number with Striker11, OTP will expire in 5 minutes.").create();
-		return new ResponseEntity<>("OTP sent successfully", HttpStatus.OK);
+		String response = fast2sms.sendOTP(mobileNumber, otpSystem.getOtp());
+		System.out.println("message sent :: "+response);
+		//Message.creator(new PhoneNumber("+91"+mobileNumber+""), new PhoneNumber("+13342316476"), "Your OTP is "+otpSystem.getOtp()+" Please use this OTP to verify your mobile number with Striker11, OTP will expire in 5 minutes.").create();
+		return new ResponseEntity<>("OTP sent successfully. OTP will expire in 3 minutes.", HttpStatus.OK);
 	}
 	
 	@PostMapping(value="/verifyMobileOTP/{mobileNumber}/otp")

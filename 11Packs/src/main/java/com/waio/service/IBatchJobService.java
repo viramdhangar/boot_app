@@ -48,4 +48,8 @@ public interface IBatchJobService {
 	 * @return
 	 */
 	int distributeWinnersWinning(String matchId);
+	/**
+	 * @param matchId
+	 */
+	void cancelAmount(String matchId);
 }

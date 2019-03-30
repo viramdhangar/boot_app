@@ -101,17 +101,24 @@ public class BatchJobController {
 	// No API used
 	@PostMapping("/v1/distributeWinning/{matchId}")
 	public String distributeWinning(@PathVariable String matchId) {
-		//List<MatchesDTO> matches = new ArrayList<MatchesDTO>();
 		try {
-			//matches = matchService.getCompletedMatchesForWinning();
 			batchJobService.distributeWinnersWinning(matchId);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			System.out.println("Error.."+e.getMessage());
 		}
 		return "Distribute Winning Job executed successfully";
 	}
 	
-	
+	// No API used
+	@PostMapping("/v1/returnCanceledLeagueAmount/{matchId}")
+	public String cancelAmount(@PathVariable String matchId) {
+		try {
+			batchJobService.cancelAmount(matchId);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error.."+e.getMessage());
+		}
+		return "Cancel league return amount Job executed successfully";
+	}
 }

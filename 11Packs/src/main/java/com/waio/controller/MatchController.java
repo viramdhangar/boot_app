@@ -66,7 +66,8 @@ public class MatchController {
 	public List<LeagueDTO> getLeagues(@PathVariable String matchId) throws ResourceNotFoundException {
 		List<LeagueDTO> leagues = new ArrayList<LeagueDTO>();
 		try {
-			if(matchService.getMatchLiveStatus(matchId).getIsActive().equalsIgnoreCase("Y")){
+			MatchesDTO matchesDTO = matchService.getMatchLiveStatus(matchId);
+			if( matchesDTO != null && matchService.getMatchLiveStatus(matchId).getIsActive().equalsIgnoreCase("Y")){
 				leagues = matchService.getLeagues(matchId);
 			}
 			return leagues;	
@@ -120,7 +121,7 @@ public class MatchController {
 			throw new ValidationException(result);
 		}
 		// check if match is not started then only insert/update
-		if (StringUtils.equalsIgnoreCase("false", matchService.getMatchLiveStatus(matchTeam.getMatchId()).getMatchStarted())) {
+		if (matchService.getMatchLiveStatus(matchTeam.getMatchId()) != null) {
 			// insert/update team
 			try {
 				result = matchService.createTeam(matchTeam);
@@ -156,18 +157,23 @@ public class MatchController {
 	public @ResponseBody MatchTeam getSquad(@PathVariable String uniqueNumber, @PathVariable String matchId,
 			@PathVariable String teamId) {
 		List<PlayerDTO> squad = new ArrayList<PlayerDTO>();
-		MatchTeam matchTeam = matchService.getTeam(uniqueNumber, matchId, teamId);
-		squad = matchService.setSelectedPlayersInSquad(matchService.getSquad(matchId), matchTeam);
-		matchTeam = new MatchTeam();
-		matchTeam.setPlayers(squad);
-		return matchTeam;
+		if(matchService.getMatchLiveStatus(matchId) != null) {
+			MatchTeam matchTeam = matchService.getTeam(uniqueNumber, matchId, teamId);
+			squad = matchService.setSelectedPlayersInSquad(matchService.getSquad(matchId), matchTeam);
+			matchTeam = new MatchTeam();
+			matchTeam.setPlayers(squad);
+			return matchTeam;	
+		} else {
+			throw new ValidationException("Match already started");
+		}
 	}
 
 	//@PostMapping(value = "/v1/joinLeague/{leagueId}")
 	@RequestMapping(value = "/v1/joinLeague/{leagueId}", produces = { "application/JSON" }, method=RequestMethod.POST)
 	public String joinLeague(@PathVariable String leagueId, @RequestBody MatchTeam team) throws ConflictedException {
 		String message = StringUtils.EMPTY;
-			if (matchService.getMatchLiveStatus(team.getMatchId()).getMatchStarted().equalsIgnoreCase("false")) {
+		MatchesDTO matchesDTO = matchService.getMatchLiveStatus(team.getMatchId());
+			if (matchesDTO != null) {
 				if (matchService.validateSmallOrGrand(leagueId, team.getMatchId(), team.getUniqueNumber()) > 0) {
 					message = "Small leagues can not be joined with multiple teams, less then or equals 10 members leagues considered as small league";
 					throw new ValidationException(message);
@@ -178,6 +184,8 @@ public class MatchController {
 						throw new ConflictedException("Selected team allready Joined");
 					}
 				}
+			} else {
+				throw new ValidationException("Match already started");
 			}
 		return message;
 	}
@@ -216,8 +224,11 @@ public class MatchController {
 	@RequestMapping(value = "/v1/switchTeam/{leagueId}/{teamIdOld}", produces = { "application/JSON" }, method=RequestMethod.POST)
 	public String switchTeam(@RequestBody MatchTeam matchTeam, @PathVariable String leagueId, @PathVariable String teamIdOld) {
 		String result = StringUtils.EMPTY;
-		if(matchService.getMatchLiveStatus(matchTeam.getMatchId()).getMatchStarted().equalsIgnoreCase("false")) {
+		MatchesDTO matchesDTO = matchService.getMatchLiveStatus(matchTeam.getMatchId());
+		if( matchesDTO != null) {
 			result = matchService.switchTeam(matchTeam, leagueId, teamIdOld);
+		} else {
+			throw new ValidationException("Match already started");
 		}
 		return result;
 	}

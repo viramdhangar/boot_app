@@ -3,6 +3,7 @@
  */
 package com.waio.dao.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -13,6 +14,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Repository;
 
 import com.waio.dao.IUserDao;
+import com.waio.model.AppDetail;
 import com.waio.model.UserDTO;
 import com.waio.sql.UserSql;
 
@@ -45,6 +47,23 @@ public class UserDao extends AbstractDaoSupport implements IUserDao {
 		if(StringUtils.isNotEmpty(userDTO.getReferralCode())) {
 			insertReferralUser(userDTO);	
 		}
+
+		// give sign up bonus amount
+		BigDecimal signupAmount = new BigDecimal(50);
+		String acctxnSql = "insert into account_transaction (username, status, created, created_id, bonus_amount) values (?, 'BONUS', current_timestamp(), 'SIGNUP', ?)";
+		int accountTxn = getJdbcTemplate().update(acctxnSql,
+				new Object[] { userDTO.getUserName(), signupAmount });
+		if(accountTxn > 0) {
+			System.out.println("Signup bonus added to transaction table");			
+		}
+
+		String accountSql = "insert into account ( username, bonus_amount, updated, updatedid) values (?, ?, current_timestamp(), 'BONUS')";
+		int account = getJdbcTemplate().update(accountSql,
+				new Object[] { userDTO.getUserName(), signupAmount });
+		if(account > 0) {
+			System.out.println("Signup bonus added to account table");			
+		}
+		
 		return savedRecords;
 		}catch(Exception e){
 			e.printStackTrace();
@@ -108,5 +127,11 @@ public class UserDao extends AbstractDaoSupport implements IUserDao {
 	public int validateReferralCode(UserDTO userDTO) {
 		return getJdbcTemplate().queryForObject(UserSql.VALIDATE_REFERRAL_CODE_SQL,
 				new Object[] { userDTO.getReferralCode() }, Integer.class);
+	}
+	
+	@Override
+	public AppDetail appDetail() {
+		List<AppDetail> appList = getJdbcTemplate().query(UserSql.MY_APP_SQL, new Object[] {}, new BeanPropertyRowMapper<AppDetail>(AppDetail.class));
+		return appList.get(0);
 	}
 }

@@ -1,40 +1,17 @@
-package com.waio.test;
+package com.waio.instamojo;
 
 import java.io.IOException;
-import java.text.ParseException;
 
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.Unirest;
-import com.squareup.okhttp.OkHttpClient;
-import com.waio.email.api.EmailService;
 import com.waio.instamojo.model.TokenResponse;
 
-public class GMTtoIST {
-	public static void main(String args[]) throws ParseException {
-
-		GMTtoIST dmd = new GMTtoIST();
-
-		
-		/*
-		 * OkHttpClient client = new OkHttpClient();
-		 * 
-		 * MediaType mediaType = MediaType.parse("application/x-www-form-urlencoded");
-		 * RequestBody body = RequestBody.create(mediaType,
-		 * "grant_type=client_credentials&client_id=test&client_secret=test"); Request
-		 * request = new Request.Builder()
-		 * .url("https://test.instamojo.com/oauth2/token/") .post(body)
-		 * .addHeader("content-type", "application/x-www-form-urlencoded")
-		 * .addHeader("cache-control", "no-cache") .build();
-		 * 
-		 * Response response = client.newCall(request).execute();
-		 */
-	}
-
+@Service("Token")
+public class Token {
 	public TokenResponse getTokenAccess() {
 		try {
 			com.mashape.unirest.http.HttpResponse<String> response = Unirest
@@ -52,9 +29,9 @@ public class GMTtoIST {
 			return null;
 		}
 	}
-
+	
 	public TokenResponse fromJson(String json) throws JsonParseException, JsonMappingException, IOException {
-		TokenResponse garima = new ObjectMapper().readValue(json, TokenResponse.class);
-		return garima;
+		TokenResponse tokenRes = new ObjectMapper().readValue(json, TokenResponse.class);
+		return tokenRes;
 	}
 }

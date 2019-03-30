@@ -1,5 +1,6 @@
 package com.waio.dao;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.List;
@@ -46,11 +47,12 @@ public interface IMatchDao {
 	int validateSmallOrGrand(String leagueId, String matchId, String createdId);
 	MatchesDTO getMatch(String matchId);
 	AccountDTO account(String userName);
-	AccountDTO addBalance(AccountDTO account, boolean debit);
+	AccountDTO addBalance(AccountDTO account, boolean debit, BigDecimal entryFee);
 	MatchTeam getTeam(String teamId);
 	LeagueDTO getLeague(String leagueId);
 	List<WinningBreakupDTO> getWinningBreakupByLeagueId(String LeagueId);
 	List<MatchesDTO> getCompletedMatchesForWinning();
 	boolean validateMatchInSquad(String matchId);
 	List<PointSystemDTO> getFantasyPoints();
+	int transactionHistory(AccountDTO account);
 }

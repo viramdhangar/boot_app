@@ -1,5 +1,6 @@
 package com.waio.service.impl;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -504,13 +505,27 @@ public class MatchService implements IMatchService{
 
 	@Override
 	public AccountDTO account(String userName) {
-		return matchDao.account(userName);
+		AccountDTO account  = matchDao.account(userName);
+		account.setTotalAmount(new BigDecimal(0));
+		if(account.getDepositedAmount() != null) {
+			account.setTotalAmount(account.getTotalAmount().add(account.getDepositedAmount()));
+		}
+		if(account.getBonusAmount()!=null) {
+			account.setTotalAmount(account.getTotalAmount().add(account.getBonusAmount()));
+		}
+		return account;
 	}
 
 	@Override
 	public AccountDTO addBalance(AccountDTO account) {
+		// save into transaction
+		int i = matchDao.transactionHistory(account);
+		if(i > 0) {
+			System.out.println("account updated with Rs."+account.getAmount()+" by "+account.getUsername());
+		}
+		//save into account
 		account.setStatus("Credit");
-		return matchDao.addBalance(account, false);
+		return matchDao.addBalance(account, false, null);
 	}
 
 	@Override
